@@ -23,6 +23,7 @@ A small, portable practice built around three observations:
 | `templates/pull_request_template.md` | Friction | `Fixes #N` prompt + per-type checklists on every PR |
 | `templates/workflows/scheduled-audit.yml` | Automation | Daily weekday Claude-powered staleness audit → PR |
 | `docs/claude-md-additions.md` | Integration | The two lines to add to `CLAUDE.md` or session instructions |
+| `docs/governance-health-spec.md` | Measurement | Implementation spec for DORA-proxy metrics derived from audit docs |
 
 ## How to apply it
 
@@ -34,9 +35,15 @@ See [GETTING_STARTED.md](./GETTING_STARTED.md) — roughly 20 minutes for a new 
 Audit catches drift → finding prompts a lint → lint enforces pre-commit
      ↑                                                    ↓
      └──────────── audit has less noise next time ────────┘
+          ↕
+  governance-health.md tracks failure rate + MTTR over time
 ```
 
-Start with just the audit and DoD. Add lints as ADRs accumulate. Don't wait until the lint exists to apply the ADR — the audit holds the gap.
+Start with just the audit and DoD. Add lints as ADRs accumulate. Don't wait until the lint exists to apply the ADR — the audit holds the gap. Once you have a few audit cycles, add governance health tracking to measure whether the practice is actually working.
+
+## Keeping templates current
+
+If you run this practice across multiple repos, one of them will evolve faster than the templates — audit findings will generate new DoD rules, and "why this rule exists" sections will fill in from real incidents. The `.claude/commands/sync-from-repo.md` skill (for Claude Code users) diffs a live source repo against these templates and applies abstracted improvements as `[PROPOSED]` markers for review.
 
 ## What this is not
 

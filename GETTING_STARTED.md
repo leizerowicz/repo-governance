@@ -93,6 +93,29 @@ As you fix findings, note which ones could have been caught by a lint. Each one 
 
 ---
 
+## Step 6 — Add governance health tracking (optional, recommended after 3+ audit cycles)
+
+Once you have three audit docs, you have enough data to measure whether the practice is working. The `docs/governance-health-spec.md` in this repo is an implementation brief — read it, then implement it in your repo.
+
+**What you get:** Four metrics derived entirely from artifacts already in your repo:
+
+| Metric | Proxy for | Data source |
+|---|---|---|
+| Weighted new findings per audit | Change failure rate | Audit doc headline table |
+| Median days P1 first seen → resolved | MTTR | Audit doc finding IDs |
+| PR merge rate (merges/week) | Deployment frequency | GitHub API |
+| PR open-to-merge time (p50/p90) | Lead time | GitHub API |
+
+The first two are free — the audit docs already contain everything needed. The last two require a short `gh pr list` query.
+
+**What to build:** A script (`scripts/governance-health.mjs` or equivalent) that reads the audit docs, queries GitHub, and writes `docs/governance-health.md` with a running trend table. Wire it into your audit workflow so it updates automatically.
+
+**When to look at it:** Monthly retrospective — not per-PR. You're measuring the governance system, not individuals. Don't set targets until you have 6+ data points; calibrate first.
+
+See `docs/governance-health-spec.md` for the full output format, implementation plan, and notes on what not to do.
+
+---
+
 ## Building lints over time
 
 The DoD has a core rule: **enforcement ships with the promise, not after it.** When you write an ADR that says "we will always do X," a lint for X goes in the same PR.
@@ -120,3 +143,17 @@ After setup, your normal workflow looks like this:
 6. Review the audit PR; assign P0s immediately, schedule P1s
 
 Over time: each audit P1 that could be a lint becomes a lint. The audit gets quieter. The codebase stays honest.
+
+---
+
+## Keeping the templates current
+
+If you run this practice in multiple repos, your fastest-moving repo will generate improvements that should flow back to the templates — new DoD rules born from real incidents, "why this rule exists" sections filled in from actual outages, new work types that turned out to matter.
+
+**For Claude Code users:** The `.claude/commands/sync-from-repo.md` skill automates this. Invoke `/sync-from-repo` from inside this repo after a sprint boundary in your source repo. It reads both repos' governance artifacts, abstracts any implementation-specific details, and applies proposed improvements as `[PROPOSED]` markers directly in the template files for you to review and accept or reject.
+
+The intended flow:
+1. Build and refine new practices in your live repo (audit → lint → DoD update)
+2. Run `/sync-from-repo` when things stabilize
+3. Review `[PROPOSED]` markers, remove the ones that don't generalize
+4. Commit and the improvement is available for all future repos
