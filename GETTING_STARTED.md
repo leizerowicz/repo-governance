@@ -1,0 +1,122 @@
+# Getting Started
+
+Apply this practice to any repo — new or existing. The steps below take about 20 minutes for a fresh repo, 40 minutes if you have existing ADRs or docs to reconcile.
+
+## Prerequisites
+
+- A GitHub repo with Actions enabled
+- An `ANTHROPIC_API_KEY` secret set in the repo (or org-level) — the audit workflow uses it
+- Claude Code locally if you want AI-assisted audit sessions
+
+---
+
+## Step 1 — Copy the templates
+
+```bash
+# From the root of your repo
+cp path/to/repo-governance/templates/definition-of-done.md docs/definition-of-done.md
+cp path/to/repo-governance/templates/pull_request_template.md .github/pull_request_template.md
+cp path/to/repo-governance/templates/workflows/scheduled-audit.yml .github/workflows/scheduled-audit.yml
+mkdir -p .github/workflows
+```
+
+If your repo uses ADRs:
+```bash
+mkdir -p docs/adr
+cp path/to/repo-governance/templates/adr/022-definition-of-done.md docs/adr/022-definition-of-done.md
+```
+
+---
+
+## Step 2 — Customize definition-of-done.md
+
+Open `docs/definition-of-done.md` and work through it:
+
+**Remove rows that don't apply.** If your repo has no database migrations, delete the Migration row. If it's a library with no deployment, trim the feature row's deployment checks.
+
+**Add rows for work types you have that aren't listed.** Common additions: `Hotfix` (subset of bug fix, no test required if time-critical — make that explicit), `Dependency update`, `Refactor`.
+
+**Fill in the "why this rule exists" callouts.** Each row has a placeholder. Go back to a real incident, a real audit finding, or a real bug that slipped through and write one sentence. The "why" is what makes the rule stick — a checklist without a story is just friction.
+
+**Don't add rules you won't enforce.** Every rule in the DoD is a promise. An unenforced rule erodes trust in the whole document faster than having no rule at all.
+
+---
+
+## Step 3 — Add to CLAUDE.md (or your session instructions)
+
+Add these two things to whatever file describes your repo to Claude:
+
+```markdown
+## Before Declaring Any Work Done
+
+Check `docs/definition-of-done.md` — find the row for your work type and satisfy every item.
+CI passing is necessary, not sufficient.
+```
+
+And in your "Key Files" or "Read Before You Work" table:
+
+```markdown
+| `docs/definition-of-done.md` | Per-work-type done checklist — check before every merge |
+```
+
+If you don't have a `CLAUDE.md`, see `docs/claude-md-additions.md` for the full minimal snippet.
+
+---
+
+## Step 4 — Configure the audit workflow
+
+Open `.github/workflows/scheduled-audit.yml` and set the cron schedule to fit your cadence. The default is weekdays at 09:00 ET (14:00 UTC).
+
+The workflow prompt already covers four domains (ADR coherence, docs drift, codebase discipline, GitHub backlog). If your repo has specific patterns you want audited — a particular directory, a specific naming convention, a known recurring drift type — add them to the prompt's "also check" section.
+
+Ensure `ANTHROPIC_API_KEY` is available as a secret.
+
+The workflow opens a PR each run with the audit doc. Review P0/P1 findings first; P2 are tracked and reviewed at the next audit.
+
+---
+
+## Step 5 — Run your first audit
+
+Either wait for the scheduled run or trigger it manually:
+
+```bash
+gh workflow run scheduled-audit.yml
+```
+
+Your first audit will be noisy. That's expected and useful — it's an inventory of existing drift, not a grade. Work through it:
+
+- **P0s** fix this week (actively misleading or a live regression risk)
+- **P1s** next sprint (costs hours when discovered next sprint)
+- **P2s** track and review at next audit
+
+As you fix findings, note which ones could have been caught by a lint. Each one of those is an ADR waiting to be written.
+
+---
+
+## Building lints over time
+
+The DoD has a core rule: **enforcement ships with the promise, not after it.** When you write an ADR that says "we will always do X," a lint for X goes in the same PR.
+
+Lints are just scripts that run in `npm run check` (or your equivalent pre-commit/CI step). Common first lints:
+
+- **Migration naming** — enforce a prefix + sequential numbering convention
+- **Schema from types** — if you derive JSON schemas from TypeScript, lint that no hand-authored schemas exist
+- **Dependency declarations** — if tools declare their external dependencies, lint that declarations and implementations match
+- **Test coverage shape** — if you have a three-tier test pattern, lint that each tier exists
+
+You don't need any of these on day 1. Add them when an audit finding proves they're needed.
+
+---
+
+## What "done" looks like
+
+After setup, your normal workflow looks like this:
+
+1. Work on a feature or fix
+2. Open a PR — the template prompts you for `Fixes #N` and the type-specific checklist
+3. Satisfy the checklist before requesting review
+4. Merge — GitHub closes the linked issue automatically
+5. Each weekday morning, the audit runs and opens a PR if it finds drift
+6. Review the audit PR; assign P0s immediately, schedule P1s
+
+Over time: each audit P1 that could be a lint becomes a lint. The audit gets quieter. The codebase stays honest.

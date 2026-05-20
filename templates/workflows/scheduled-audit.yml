@@ -1,0 +1,105 @@
+name: Scheduled Staleness Audit
+
+on:
+  schedule:
+    # Weekdays at 09:00 ET (14:00 UTC) — adjust to your timezone
+    - cron: '0 14 * * 1-5'
+  workflow_dispatch:
+    inputs:
+      notes:
+        description: 'Optional context note to include in the audit brief'
+        required: false
+        default: ''
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+      id-token: write   # required by claude-code-action for OIDC auth
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Find prior audit doc
+        id: prior
+        run: |
+          PRIOR=$(ls docs/audit-*.md 2>/dev/null | sort | tail -1 || echo "none")
+          echo "path=$PRIOR" >> "$GITHUB_OUTPUT"
+
+      - name: Run staleness audit via Claude Code
+        uses: anthropics/claude-code-action@v1
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          prompt: |
+            Run a staleness audit on this repository. Check four domains in parallel:
+
+            1. **ADR coherence** — if ADRs exist in docs/adr/, are they internally consistent,
+               reflected in the code, and do they have the enforcement they promised?
+               Flag ADRs whose status says Accepted but whose promised lints don't exist.
+
+            2. **Docs vs reality drift** — do files in docs/ describe the system that actually
+               exists? Flag: present-tense claims for things that are planned or deleted,
+               internal contradictions, file paths and function names that don't exist,
+               issue/PR numbers that point nowhere.
+
+            3. **Codebase discipline** — dead code still imported, retired patterns still in use,
+               TODO/FIXME comments without tracking issues, migration naming violations,
+               Bicep/IaC referencing deleted resources.
+
+            4. **GitHub backlog** — open issues with no activity in >30 days, open issues whose
+               fix is likely already merged (look for related PR titles), PRs open >7 days with
+               green CI and no review activity.
+
+            Prior audit: ${{ steps.prior.outputs.path }}
+            ${{ github.event.inputs.notes && format('Context note: {0}', github.event.inputs.notes) || '' }}
+
+            Severity guidance:
+            - P0: actively misleading a new contributor right now, or a live regression risk
+            - P1: will cost hours when discovered next sprint
+            - P2: cosmetic, dead links, nice-to-have
+
+            Output format: write docs/audit-YYYY-MM-DD.md with:
+            - Headline counts table (Resolved / Superseded / Carried / New / Total open per severity)
+            - Resolved section (findings from prior audit now fixed, with evidence)
+            - P0 / P1 / P2 sections (full body per finding with Recommended action)
+            - Each finding ID: AUDIT-YYYY-MM-DD-DOMAIN-NN (DOMAIN = ADR/DOCS/CODE/BACKLOG)
+            - Carry findings forward from the prior audit if still open
+
+            After writing the doc, stage it with `git add docs/audit-*.md` and stop.
+            Do not commit or push — the workflow handles that.
+
+      - name: Check for new audit doc
+        id: check
+        run: |
+          DATE=$(date +%Y-%m-%d)
+          DOC="docs/audit-${DATE}.md"
+          if [ -f "$DOC" ]; then
+            echo "doc=$DOC" >> "$GITHUB_OUTPUT"
+            echo "found=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "found=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Open PR with audit results
+        if: steps.check.outputs.found == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          DATE=$(date +%Y-%m-%d)
+          BRANCH="audit/${DATE}"
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git checkout -b "$BRANCH"
+          git add docs/audit-*.md
+          git commit -m "docs: staleness audit ${DATE}"
+          git push -u origin "$BRANCH"
+          gh pr create \
+            --title "docs: staleness audit ${DATE}" \
+            --body "Scheduled staleness audit. Review P0/P1 findings first — P0s fixed this week, P1s next sprint. See \`docs/definition-of-done.md\` for the DoD reference." \
+            --label "audit,documentation" || \
+          gh pr create \
+            --title "docs: staleness audit ${DATE}" \
+            --body "Scheduled staleness audit. Review P0/P1 findings first — P0s fixed this week, P1s next sprint. See \`docs/definition-of-done.md\` for the DoD reference."
