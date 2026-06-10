@@ -22,12 +22,14 @@ You end the build with working infrastructure, a codebase that matches its own d
 
 **For the build:**
 - Spec review before contractor code lands — catch structural problems when they're cheap
+- The architecture rules your build depends on, written down — with an automatic check wired for each one, so the codebase keeps obeying them after your contractor rolls off
 - Definition of Done installed in your repo — makes "done" explicit so you don't have to argue about it after
 - PR template that surfaces the checklist at submission time
 - CLAUDE.md additions so your AI coding agent knows the rules too
 
 **Running in CI:**
 - Scheduled staleness audit — daily Claude-run check that opens a PR if your docs, specs, and code drift apart
+- A watchdog on the watchdog — if the daily check itself silently stops, a tripwire goes red and escalates within days. Silent failure is the kind that finds you through a customer.
 - Alert coalescing for AI-agent errors (a flapping agent will DOS your Slack without it)
 - Credential handling review — env-var-stored secrets are exfiltratable; vault-backed ones structurally aren't
 
@@ -39,7 +41,7 @@ You end the build with working infrastructure, a codebase that matches its own d
 
 **Build oversight** — weekly touchpoint through your launch window. I review PRs, flag spec drift, and field the contractor questions you can't answer. You focus on the product; I focus on whether the build is honest.
 
-**Launch window coverage** — for the period when you're unreachable. I'm the technical backstop. Audit PRs get triaged; P0 findings get escalated to whoever you designate on-call.
+**Launch window coverage** — for the period when you're unreachable. I'm the technical backstop. Audit PRs get triaged; P0 findings get escalated to whoever you designate on-call. The monitoring layer was built for exactly this period: everything fails loudly, including the monitors themselves.
 
 ---
 

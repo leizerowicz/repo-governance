@@ -14,11 +14,19 @@ Apply this practice to any repo — new or existing. The steps below take about 
 
 ```bash
 # From the root of your repo
+mkdir -p docs/audits .github/workflows
 cp path/to/repo-governance/templates/definition-of-done.md docs/definition-of-done.md
 cp path/to/repo-governance/templates/pull_request_template.md .github/pull_request_template.md
 cp path/to/repo-governance/templates/workflows/scheduled-audit.yml .github/workflows/scheduled-audit.yml
-mkdir -p .github/workflows
+cp path/to/repo-governance/templates/workflows/audit-deadman.yml .github/workflows/audit-deadman.yml
 ```
+
+If your backlog needs structure (most do):
+```bash
+cp path/to/repo-governance/templates/issue-authoring.md docs/issue-authoring.md
+```
+
+Audit docs land in `docs/audits/` — if your `.gitignore` has a `docs/*` pattern, make sure it doesn't silently block that subdirectory.
 
 If your repo uses ADRs:
 ```bash
@@ -42,7 +50,21 @@ Open `docs/definition-of-done.md` and work through it:
 
 ---
 
-## Step 3 — Add to CLAUDE.md (or your session instructions)
+## Step 3 — Capture the implicit decisions (ADRs with enforcement)
+
+Every codebase already runs on a handful of load-bearing architectural decisions that exist only in someone's head — "all DB access goes through the repository layer," "secrets never touch env vars," "migrations are append-only." Don't wait for the audit to trip over violations one at a time. Capture them now:
+
+1. **Identify 3–5 decisions** the build actually depends on. Interview whoever holds them; where nobody does, interview the codebase — consistent patterns that would be expensive to break are decisions, whether or not anyone wrote them down.
+2. **Write each as an ADR** (`docs/adr/`) — what is decided, why, and what the consequences are.
+3. **Ship each ADR with its enforcement** — a lint in the same PR, per the DoD's core rule. If the lint is genuinely expensive to build now, the ADR stays **Proposed** with a tracking issue, and the audit holds the gap.
+
+Keep it to five or fewer. An ADR corpus seeded at onboarding should cover the decisions a new contractor (human or AI) could violate *silently* — everything else can emerge from audit findings later, which is the normal path.
+
+This step is what makes the practice survive personnel changes: the rules stop living with the people who happen to know them.
+
+---
+
+## Step 4 — Add to CLAUDE.md (or your session instructions)
 
 Add these two things to whatever file describes your repo to Claude:
 
@@ -63,7 +85,7 @@ If you don't have a `CLAUDE.md`, see `docs/claude-md-additions.md` for the full 
 
 ---
 
-## Step 4 — Configure the audit workflow
+## Step 5 — Configure the audit workflow
 
 Open `.github/workflows/scheduled-audit.yml` and set the cron schedule to fit your cadence. The default is weekdays at 09:00 ET (14:00 UTC).
 
@@ -73,9 +95,11 @@ Ensure `ANTHROPIC_API_KEY` is available as a secret.
 
 The workflow opens a PR each run with the audit doc. Review P0/P1 findings first; P2 are tracked and reviewed at the next audit.
 
+The companion `audit-deadman.yml` is the watchdog's watchdog: if no audit artifact appears for 4 days, it goes red and files a P1 issue. This matters more than it sounds — GitHub disables scheduled workflows after 60 days of repo inactivity, and an audit that dies produces *nothing*, so nothing turns red on its own. Set its cron to fire after your audit's window.
+
 ---
 
-## Step 5 — Run your first audit
+## Step 6 — Run your first audit
 
 Either wait for the scheduled run or trigger it manually:
 
@@ -93,7 +117,7 @@ As you fix findings, note which ones could have been caught by a lint. Each one 
 
 ---
 
-## Step 6 — Add governance health tracking (optional, recommended after 3+ audit cycles)
+## Step 7 — Add governance health tracking (optional, recommended after 3+ audit cycles)
 
 Once you have three audit docs, you have enough data to measure whether the practice is working. The `docs/governance-health-spec.md` in this repo is an implementation brief — read it, then implement it in your repo.
 
@@ -108,7 +132,7 @@ Once you have three audit docs, you have enough data to measure whether the prac
 
 The first two are free — the audit docs already contain everything needed. The last two require a short `gh pr list` query.
 
-**What to build:** A script (`scripts/governance-health.mjs` or equivalent) that reads the audit docs, queries GitHub, and writes `docs/governance-health.md` with a running trend table. Wire it into your audit workflow so it updates automatically.
+**What to build:** A script (`scripts/governance-health.mjs` or equivalent) that reads the audit docs, queries GitHub, and writes `docs/governance-health.md` with a running trend table. Wire it into your audit workflow so it updates automatically. `templates/governance-health.md` shows the exact output shape, refined over 8 audit cycles in the reference implementation.
 
 **When to look at it:** Monthly retrospective — not per-PR. You're measuring the governance system, not individuals. Don't set targets until you have 6+ data points; calibrate first.
 

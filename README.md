@@ -22,6 +22,9 @@ A small, portable practice built around three observations:
 | `templates/adr/022-definition-of-done.md` | Policy | ADR giving DoD its authority (optional, for ADR-using repos) |
 | `templates/pull_request_template.md` | Friction | `Fixes #N` prompt + per-type checklists on every PR |
 | `templates/workflows/scheduled-audit.yml` | Automation | Daily weekday Claude-powered staleness audit → PR |
+| `templates/workflows/audit-deadman.yml` | Automation | Dead-man probe — goes red and files a P1 if the audit itself silently dies |
+| `templates/issue-authoring.md` | Policy | Issue schema + label taxonomy so every issue is born actionable |
+| `templates/governance-health.md` | Measurement | Output shape for the auto-generated DORA-proxy metrics doc |
 | `docs/claude-md-additions.md` | Integration | The two lines to add to `CLAUDE.md` or session instructions |
 | `docs/governance-health-spec.md` | Measurement | Implementation spec for DORA-proxy metrics derived from audit docs |
 
@@ -53,4 +56,4 @@ If you run this practice across multiple repos, one of them will evolve faster t
 
 ---
 
-Built from practice in [ai-fleet](https://github.com/HopSkipInc/ai-fleet). Refined over three audit cycles.
+Built from practice in [ai-fleet](https://github.com/HopSkipInc/ai-fleet). Refined over eleven audit cycles and counting — including two silent failures of the audit machinery itself, which is why the dead-man probe exists.

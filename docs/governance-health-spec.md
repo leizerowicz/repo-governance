@@ -1,8 +1,18 @@
 # Governance Health Metrics — Implementation Spec
 
-**Status:** Spec — implement in source repo (ai-fleet), refine through 2–3 audit cycles, then sync back to repo-governance as a template.
+**Status:** Implemented — built in ai-fleet (`tools/governance-health.mjs`), refined over 8 audit cycles, synced back 2026-06-10. The canonical output shape now lives in `templates/governance-health.md`; this spec remains the implementation brief for new repos.
 **Author:** Greg Leizerowicz
-**Date:** 2026-05-20
+**Date:** 2026-05-20 (reconciled 2026-06-10)
+
+## Reconciliation notes from the live build (2026-06)
+
+Where the implementation diverged from this spec, the implementation won:
+
+- **Resolution time covers all resolved findings with date-prefixed IDs**, not just trailing-30-day P1s — small repos need every data point. The P1 p50/p90 summary line carries the ≤ 7 days target.
+- **Phase 2 generalized:** the metrics regenerate wherever the audit runs (CI workflow step, or inside the audit pipeline's PR), plus report-only in the dead-man probe's job log for drive-by visibility.
+- **Phase 3 threshold moved from 3+ to 6+ data points** — at 3 cycles the numbers were still calibrating.
+- **Data-quality warnings**: the script prints warnings to stderr when its inputs are degraded (short finding IDs, shallow clone, no `gh` auth) and degrades gracefully rather than failing the audit. Warnings appearing in an audit PR are themselves audit findings.
+- **Audit docs live in `docs/audits/`** — path references below predate that convention.
 
 ---
 
@@ -157,9 +167,7 @@ P1 MTTR: [healthy ✓ | watch | over target ⚠]
 
 ## Sync-back signal
 
-When `docs/governance-health.md` has been running for 3+ audit cycles and the structure feels right, run `/sync-from-repo` in repo-governance — it will pick up the governance-health structure and propose a `templates/governance-health.md` template.
-
-The DoD integration (Phase 3) is also a sync candidate — once it's refined in ai-fleet, the new "Governance health" DoD section should land in `templates/definition-of-done.md`.
+**Done (2026-06-10).** `templates/governance-health.md` proposed from the live structure after 8 audit cycles, and the "Governance health" gate landed in `templates/definition-of-done.md` (commented out until calibrated — 6+ data points).
 
 ---
 

@@ -30,4 +30,6 @@ An ADR cannot move to **Accepted** status until every lint or check it promises 
 
 - `docs/definition-of-done.md` — the per-work-type checklists
 - `.github/pull_request_template.md` — the PR-time enforcement surface
-- `.github/workflows/scheduled-audit.yml` — the periodic catch-all
+<!-- [PROPOSED from source repo: mechanism-agnostic — the audit may run as a workflow or an in-platform scheduler; the dead-man probe watches either] -->
+- The scheduled staleness audit (`.github/workflows/scheduled-audit.yml`, or your in-platform equivalent) — the periodic catch-all
+- `.github/workflows/audit-deadman.yml` — the probe that goes red if the audit itself silently dies

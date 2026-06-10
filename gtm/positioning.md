@@ -24,7 +24,7 @@ Three things that distinguish this from existing vCTO / engineering-advisory off
 
 1. **Working artifacts, not policy docs.** Most CTO-advisory engagements produce slide decks, frameworks, and roadmaps. This produces files that ship in repos and run in CI. The deliverable is operational from day one.
 
-2. **Compounding dynamic.** "Each audit finding that could have been a lint becomes a lint." The system gets better over time without the operator's attention. That's a quantifiable, demoable ROI story most advisory offerings can't tell.
+2. **Compounding dynamic.** "Each audit finding that could have been a lint becomes a lint." The system gets better over time without the operator's attention. That's a quantifiable, demoable ROI story most advisory offerings can't tell. Now backed by live data from the reference repo: failure findings fell by two-thirds within the first week of enforcement, and priority-1 issues resolve in 2–3 days against a 7-day target. When the audit went down for 12 days, drift accumulated at a measured per-commit rate — the outage doubles as the control group. (Per the governance-health spec: report trends to prospects, never raw scores.)
 
 3. **AI-coding-era specific.** Built for teams where 50%+ of new code is AI-generated. Most traditional engineering-governance approaches predate this and break under it — they assume a human-readable PR rate and a human reviewer who reads everything carefully.
 
@@ -32,8 +32,8 @@ Three things that distinguish this from existing vCTO / engineering-advisory off
 
 - **Channels:** engineering leadership networks (other CTOs, VPEs), founder networks, AI/developer-tools community (Wayfind audience), partner-of-partner referrals (JDAQA flavor).
 - **Opener:** not "I do governance" but "I built a practice for this specific problem — want to look at it together?" The methodology is the conversation starter.
-- **Front door (proposed):** free 1-hour repo audit. Run the staleness audit script over the prospect's repo, manually review findings, share P0/P1 with them. Direct analog of JDAQA's "Quality Debt Call." Low-friction, demonstrates value, surfaces conversion opportunity.
-- **Conversion:** from audit findings to a fixed-fee repo onboarding. The audit shows the problem; the onboarding is the answer.
+- **Front door (proposed):** free 1-hour repo audit. Run the staleness audit script over the prospect's repo, manually review findings, share P0/P1 with them. Direct analog of JDAQA's "Quality Debt Call." Low-friction, demonstrates value, surfaces conversion opportunity. The prospect's first audit is their "unwatched weeks" number — frame it as inventory, not grade, and show the reference repo's curve as what week 2 onward looks like.
+- **Conversion:** from audit findings to a fixed-fee repo onboarding. The audit shows the problem; the onboarding is the answer. Onboarding includes **decision capture with enforcement** as a named component: extract the 3–5 implicit architecture decisions from the contractor's head into ADRs, each with its lint wired to CI — the rules stop living with the people who happen to know them. (Founder-facing phrasing: "architecture rules written down with an automatic check each" — never "ADR.")
 
 ## DORA mapping
 

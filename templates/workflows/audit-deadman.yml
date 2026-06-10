@@ -1,0 +1,122 @@
+# [PROPOSED from source repo] New template — review before committing
+#
+name: Audit dead-man probe
+
+# Kind: PROBE — monitors production reality, never blocks merges or deploys.
+#
+# A dead audit produces *nothing*, and nothing turns red on its own. In the source
+# repo the scheduled audit died silently twice in three weeks — first as a CI job,
+# then as its in-platform replacement. This probe is the watchdog's watchdog,
+# deliberately OUTSIDE the mechanism it watches.
+#
+# What it does, every weekday after your audit's scheduled window:
+#   1. Finds the newest audit artifact — a committed docs/audits/audit-*.md on the
+#      default branch OR an open/recently-created audit PR.
+#   2. If the newest artifact is older than MAX_AGE_DAYS (4 calendar days tolerates
+#      a weekend; a long-weekend false positive is acceptable for a probe), it files
+#      an idempotent P1 issue (label: audit-deadman) and fails the job so the
+#      Actions surface goes red.
+#
+# This workflow must never gain steps that depend on prod credentials or upstream
+# availability — it watches repo artifacts only.
+
+on:
+  schedule:
+    - cron: '30 15 * * 1-5' # weekdays, after your audit's scheduled window — adjust
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+  pull-requests: read
+
+jobs:
+  deadman:
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+      MAX_AGE_DAYS: 4
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check audit freshness
+        id: freshness
+        run: |
+          set -euo pipefail
+          TODAY=$(date -u +%Y-%m-%d)
+
+          # Newest committed audit doc (reconstructed stubs count — they prove
+          # an audit happened even if the doc landed late).
+          DOC_DATE=$(ls docs/audits/ 2>/dev/null \
+            | grep -oE '^audit-[0-9]{4}-[0-9]{2}-[0-9]{2}' \
+            | sed 's/^audit-//' | sort | tail -1 || true)
+
+          # Newest audit PR (open or recently merged) — the audit opens a PR
+          # before the doc reaches the default branch.
+          PR_DATE=$(gh pr list --repo "$GITHUB_REPOSITORY" --state all --limit 10 \
+            --search 'staleness audit in:title' --json createdAt \
+            --jq 'map(.createdAt[:10]) | sort | last // empty' || true)
+
+          NEWEST=$(printf '%s\n%s\n' "${DOC_DATE:-1970-01-01}" "${PR_DATE:-1970-01-01}" | sort | tail -1)
+          AGE_DAYS=$(( ( $(date -u -d "$TODAY" +%s) - $(date -u -d "$NEWEST" +%s) ) / 86400 ))
+
+          echo "Newest audit artifact: $NEWEST (doc: ${DOC_DATE:-none}, pr: ${PR_DATE:-none}) — ${AGE_DAYS}d old (max ${MAX_AGE_DAYS}d)"
+          {
+            echo "newest=$NEWEST"
+            echo "age_days=$AGE_DAYS"
+            echo "stale=$([ "$AGE_DAYS" -gt "$MAX_AGE_DAYS" ] && echo true || echo false)"
+          } >> "$GITHUB_OUTPUT"
+
+      # Optional: if you have a governance-health script, regenerate it here
+      # report-only (print to the job log, don't commit) for drive-by visibility.
+      # - name: Governance health (report only)
+      #   run: node tools/governance-health.mjs && cat docs/governance-health.md
+
+      - name: File dead-man issue (idempotent)
+        if: steps.freshness.outputs.stale == 'true'
+        run: |
+          set -euo pipefail
+          NEWEST='${{ steps.freshness.outputs.newest }}'
+          AGE='${{ steps.freshness.outputs.age_days }}'
+
+          gh label create audit-deadman \
+            --repo "$GITHUB_REPOSITORY" \
+            --description "Filed automatically by audit-deadman.yml" \
+            --color B60205 --force
+
+          EXISTING=$(gh issue list --repo "$GITHUB_REPOSITORY" --state open \
+            --label audit-deadman --json number --jq '.[0].number // empty')
+          if [ -n "$EXISTING" ]; then
+            echo "Open dead-man issue #$EXISTING already exists — not filing a duplicate."
+            exit 0
+          fi
+
+          BODY=$(cat <<EOF
+          ## Work type
+          bug
+
+          ## Verifiable outcomes (binary, observable)
+          - [ ] A new audit doc exists in \`docs/audits/\` dated within the last ${MAX_AGE_DAYS} days, or an audit PR is open
+          - [ ] The cause of the missed run(s) is identified and recorded (comment here, or the next audit doc's "Recipe lessons")
+
+          ## Verification (how to prove it)
+          - \`ls docs/audits/ | sort | tail -1\` shows a date within ${MAX_AGE_DAYS} days
+          - Re-run \`audit-deadman.yml\`: the freshness step passes
+
+          ## Status
+          ready — filed automatically by \`.github/workflows/audit-deadman.yml\`. Newest audit artifact is dated ${NEWEST} (${AGE} days old). The scheduled audit has produced nothing visible since then — check its scheduler/logs for the failed or missing runs.
+          EOF
+          )
+
+          gh issue create --repo "$GITHUB_REPOSITORY" \
+            --title "audit: no staleness-audit artifact since $NEWEST (dead-man probe)" \
+            --label "audit-deadman" \
+            --body "$BODY"
+
+      - name: Fail when stale (red probe surface)
+        if: steps.freshness.outputs.stale == 'true'
+        run: |
+          echo "::error::No staleness-audit artifact since ${{ steps.freshness.outputs.newest }} (${{ steps.freshness.outputs.age_days }} days). The audit is silently dead — see the audit-deadman issue."
+          exit 1
