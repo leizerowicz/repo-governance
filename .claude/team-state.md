@@ -1,6 +1,6 @@
 # repo-governance — Team State
 
-Last updated: 2026-05-20
+Last updated: 2026-06-10 (session 3)
 
 ## Architecture & Key Decisions
 
@@ -16,7 +16,16 @@ Last updated: 2026-05-20
 
 ## Current Sprint Focus
 
-Getting set up for productive sessions. Direction validated — founder ICP, new one-pager drafted. No active code work yet.
+First full sync from ai-fleet complete (2026-06-10): 35 `[PROPOSED]` markers across the templates, three new templates (governance-health, audit-deadman probe, issue-authoring), README/GETTING_STARTED/spec reconciled, GTM updated (dead-man probe → launch-window proof point; governance-health trends → compounding-claim evidence; decision-capture-with-enforcement → named onboarding component).
+
+Next: run `/review-sync` in a fresh session to disposition the markers.
+
+## Conventions (additions)
+
+- **Sync commits:** `sync: from <source-repo> <YYYY-MM-DD>` — `/sync-from-repo` Step 0 finds the last sync date by grepping for this.
+- **Review commits:** `sync-review: <source-repo> <date> — accepted N/M proposals` — the N/M ratio calibrates the sync skill's abstraction rules.
+- **Skill pair:** `/sync-from-repo` proposes (7 steps now: pre-flight the skill itself, templates, docs reconciliation, GTM proposals gated on user feedback); `/review-sync` dispositions in a later session with fresh eyes.
+- ai-fleet's governance shape as of 2026-06: audits in `docs/audits/`, audit runs in-platform (cron machine) with `audit-deadman.yml` as the watchdog, `docs/issue-authoring.md` + 3-layer enforcement, governance-health live with 8+ cycles.
 
 ## Engagement Tracker
 
