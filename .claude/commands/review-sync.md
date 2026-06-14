@@ -53,6 +53,47 @@ Two commit-message conventions, both load-bearing:
 
 ---
 
+## Step 5: Per-repo maintenance prompts
+
+After the commit, generate a maintenance prompt for each governed repo that had markers in this sync run. Store each as `downstream/<client>/<repo>/YYYY-MM-DD-maintenance.md` (see `downstream/hopskip/_client.md` for the client/repo directory map).
+
+Each prompt is a self-contained Claude Code instruction — paste it into the target repo and run it. Write it as a direct instruction, not documentation.
+
+**Prompt structure:**
+
+```markdown
+# Governance Maintenance — <repo> — <date>
+
+**Client:** <client name>
+**Source:** greg/repo-governance sync-review <date>
+
+You are updating this repo's governance to match the latest template improvements from `~/repos/greg/repo-governance`.
+
+## What changed in the templates (this sync-review)
+[For each accepted proposal: one sentence on what changed and why it matters]
+
+## What to do in this repo
+
+[Concrete ordered steps. For each:
+ - Name the file to edit
+ - Say what to add/change (quote the new text or describe precisely)
+ - Note any adaptation needed for this repo's stack or conventions]
+
+## Already present — skip
+[Artifacts this repo already has that don't need re-applying]
+
+## Not applicable — skip
+[Proposals that don't apply to this repo's stack, with one-line reason]
+```
+
+**Scoping rules:**
+- Tailor each prompt to the repo's *current state* — don't re-propose things the repo already has
+- If a proposal touches an artifact the repo doesn't have yet (e.g., no `code-hygiene.md`), include the bootstrap step, not just the delta
+- If a repo is early-stage, note what to defer and when to revisit (e.g., "add code-hygiene after the first audit cycle completes")
+- If no accepted proposals affect a given repo, skip generating a prompt for it
+
+---
+
 ## Notes
 
 - **Don't rubber-stamp.** The sync skill abstracts aggressively, but "generalizes to any repo" is a judgment call only the review can make. The most common rejection reason: the rule encodes the source repo's *scale* (daily audits, label taxonomies) rather than its *lesson*.

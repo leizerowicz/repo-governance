@@ -244,3 +244,18 @@ The marker review itself is a separate skill, run in a later session with fresh 
 - **governance-health.md:** Live in ai-fleet since 2026-05 with 8+ audit cycles of data — the sync-back condition in `docs/governance-health-spec.md` is met. Propose `templates/governance-health.md` from the live structure, and reconcile the spec where the implementation diverged from it.
 - **Audit mechanism evolution:** `templates/workflows/scheduled-audit.yml` reflects the GHA-workflow shape. ai-fleet outgrew it (in-platform machine + dead-man probe). Both shapes are valid for template consumers — keep the workflow template, and propose the dead-man probe as a companion template (`templates/workflows/audit-deadman.yml`); it is deliberately generic (watches repo artifacts only, no platform dependencies).
 - **issue-authoring.md:** Candidate for `templates/issue-authoring.md` — propose once its schema has survived at least one backlog sweep cycle in the source repo.
+
+---
+
+## Cross-repo calibration sources
+
+The primary source repo (ai-fleet) is the reference for most artifact classes. But as additional repos come under governance, some artifacts mature faster there first. Before concluding that an artifact class has "nothing to sync," check the calibration source for that class.
+
+| Artifact class | Primary calibration source | Notes |
+|---|---|---|
+| `docs/code-hygiene.md` + `workflows/code-hygiene.yml` | `HopSkipInc/enrichment-pipeline` | Most complete implementation — two-tier gate/report model, WARN→FAIL promotion, audit domain linkage. Ready to template after additional audit cycles confirm stability. |
+| Early-adoption / onboarding friction | `HopSkipInc/analytics-infrastructure` | Recent adopter; what needed adding or dropping for a non-AI-native stack is a template signal. Check its DoD and audit docs for anything the template doesn't anticipate. |
+
+**How to use:** The sync skill still runs against one primary source per session. When the primary lacks an artifact, read the calibration source for that class before writing the "not applicable" note in Step 7. If the calibration source has a clean, stable version, propose it from there using the same `[PROPOSED from source repo]` marker format, noting the actual source in the marker text.
+
+**Adding new calibration sources:** When a new repo comes under governance, add a row here once its first audit cycle completes. Note which artifact(s) it implements most distinctly — that's where it'll contribute signal back to the templates.

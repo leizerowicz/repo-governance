@@ -1,6 +1,6 @@
 # vCTO Positioning — Working Notes
 
-Last updated: 2026-05-20
+Last updated: 2026-06-14
 
 A working doc, not finished collateral. Captures positioning assumptions so they don't have to be re-derived every conversation.
 
@@ -28,6 +28,10 @@ Three things that distinguish this from existing vCTO / engineering-advisory off
 
 3. **AI-coding-era specific.** Built for teams where 50%+ of new code is AI-generated. Most traditional engineering-governance approaches predate this and break under it — they assume a human-readable PR rate and a human reviewer who reads everything carefully.
 
+   A specific manifestation: **mechanical slop detection** — objective signals for AI-generated cruft that a human reviewer misses or flags inconsistently. Dead code, duplication, false-green stub tests, working files committed to the repo root. Gate the hard ones; run the rest report-only and promote to gates once the baseline is clean. In founder vocabulary: *a "no slop" rule without a detector is just optimism.* Shipping across three reference repos and templatable.
+
+4. **Compounding across repos, not just within one.** When the fastest-moving repo develops a better practice, it flows back to the template set, then out to every other governed repo via targeted maintenance prompts — concrete Claude Code instructions, scoped to each repo's current state. The client doesn't need to read changelogs or recheck the templates; they get told exactly what to add and where. This is what a retainer looks like in practice: not advice, but a continuous upstream of improvements landing in your repo.
+
 ## Sales motion
 
 - **Channels:** engineering leadership networks (other CTOs, VPEs), founder networks, AI/developer-tools community (Wayfind audience), partner-of-partner referrals (JDAQA flavor).
@@ -48,7 +52,7 @@ Tangible outcome statements for the offering:
 - Brand it personally (Greg Leizerowicz Advisory) or under a name (something more brandable)?
 - Specific pricing — repo onboarding range, retainer range, embedded vCTO day-rate or monthly?
 - Tier the offering or one-size-fits-all?
-- Multi-repo / org-level story — needed for selling to teams with 5+ services. Currently templates are repo-scoped. Org-level audit workflow + templates-repo-pinning pattern is a future deliverable.
+- Multi-repo / org-level story — partially answered. Three repos now under governance (ai-fleet, analytics-infrastructure, enrichment-pipeline). The delivery mechanism is per-repo maintenance prompts (generated after each sync-review, stored in `downstream/<client>/<repo>/`). This is the concrete shape of the ongoing retainer: the client doesn't maintain templates, they run prompts we give them. What's still missing: org-level audit rollup (single view across all repos) and a templates-pinning pattern so client repos can track a version rather than running freehand prompts.
 - First case study — BModelr is the candidate; what does the write-up structure look like?
 
 ## Inputs to revisit
