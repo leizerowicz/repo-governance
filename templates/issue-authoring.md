@@ -1,11 +1,3 @@
-<!-- [PROPOSED from source repo] New template — review before committing.
-
-Abstracted from the source repo's issue-authoring policy after it survived a
-~50-issue backlog sweep and a full audit cycle of enforcement. The source repo
-enforces this with three layers of tooling; the schema is valuable even with
-zero tooling — start with the schema, add layers as drift proves they're needed.
--->
-
 # Issue Authoring
 
 **Status:** Policy — enforced by [your creation tooling, CI validator, and/or periodic audit]

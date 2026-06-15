@@ -1,5 +1,3 @@
-# [PROPOSED from source repo] New template — review before committing
-#
 name: Audit dead-man probe
 
 # Kind: PROBE — monitors production reality, never blocks merges or deploys.

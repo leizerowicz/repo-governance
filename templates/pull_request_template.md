@@ -14,7 +14,7 @@
 - [ ] Feature
 - [ ] Bug fix
 - [ ] Migration
-- [ ] [PROPOSED from source repo] Scheduled automation / job definition change
+- [ ] Scheduled automation / job definition change
 - [ ] Documentation
 - [ ] Chore / housekeeping
 
@@ -28,20 +28,20 @@
 - [ ] CI passes locally
 - [ ] `CLAUDE.md` updated if it describes something this PR changes
 - [ ] No doc section contradicts another in this PR or in linked docs
-- [ ] [PROPOSED from source repo] If a CI workflow was added or modified: it is correctly a **gate** (deterministic, blocks merge) or a **probe** (monitors reality, never blocks) — steps sensitive to transient upstream failures belong in probes, not merge gates
+- [ ] If a CI workflow was added or modified: it is correctly a **gate** (deterministic, blocks merge) or a **probe** (monitors reality, never blocks) — steps sensitive to transient upstream failures belong in probes, not merge gates
 
 ### ADR
 - [ ] Every lint this ADR promises is wired into CI and passes
 - [ ] Existing violations are fixed or explicitly grandfathered with a named tracking issue
 - [ ] Status is **Proposed** in the file; moves to **Accepted** only after the above (reviewer confirms)
-- [ ] [PROPOSED from source repo] If completing work described in an existing ADR's Consequences: that bullet rewritten in past tense in this PR
-- [ ] [PROPOSED from source repo] Any Consequences bullet with forward-looking language ("will be," "future," "pending") has a tracking issue **or** an explicit `WONT-FIX: <rationale>`
+- [ ] If completing work described in an existing ADR's Consequences: that bullet rewritten in past tense in this PR
+- [ ] Any Consequences bullet with forward-looking language ("will be," "future," "pending") has a tracking issue **or** an explicit `WONT-FIX: <rationale>`
 
 ### Feature
 - [ ] Integration test exists if the path touches a data store
 - [ ] Any new "Known Gaps" entry has a severity label and a tracking issue number
 - [ ] If this closes a tracked issue: `Fixes #N` is in the **Closes** section above
-- [ ] [PROPOSED from source repo] If this PR closes an issue: searched the docs for `#N` and updated any stale references pointing to it
+- [ ] If this PR closes an issue: searched the docs for `#N` and updated any stale references pointing to it
 
 ### Bug fix
 - [ ] Regression test at the same level the bug manifested (unit or integration)
@@ -52,9 +52,9 @@
 ### Migration
 - [ ] Post-migration integrity check if the SQL is data-manipulating
 - [ ] If a new schema pattern is introduced: consuming code path has an integration test, or a P0 issue is filed
-- [ ] [PROPOSED from source repo] If an enforcement-bearing schema element is added (access policy, rate-limit/lifecycle column, tenancy flag): consuming code ships here, or the element is registered as dormant with a tracking issue
+- [ ] If an enforcement-bearing schema element is added (access policy, rate-limit/lifecycle column, tenancy flag): consuming code ships here, or the element is registered as dormant with a tracking issue
 
-<!-- [PROPOSED from source repo] New section — delete if your repo has no scheduled automation -->
+<!-- Delete this section if your repo has no scheduled automation -->
 ### Scheduled automation / job definition change
 - [ ] Every tool, command, or resource the definition references exists and is active
 - [ ] Schedule expression written in the timezone the scheduler parses it in; any description states the same schedule

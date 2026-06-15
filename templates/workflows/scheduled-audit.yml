@@ -1,6 +1,6 @@
 name: Scheduled Staleness Audit
 
-# [PROPOSED from source repo] Kind: PROBE — monitors repo reality, never blocks merges.
+# Kind: PROBE — monitors repo reality, never blocks merges.
 # This workflow is the starting shape. If your audit later moves off GitHub Actions
 # (e.g., into an in-platform scheduler), pair it with audit-deadman.yml — the source
 # repo's audit died silently twice once it lost the Actions failure surface.
@@ -28,10 +28,9 @@ jobs:
         with:
           fetch-depth: 0
 
-      # [PROPOSED from source repo: audit docs live in docs/audits/ — a flat docs/ dir
-      # gets noisy after ~10 audits, and a dedicated dir lets .gitignore rules and
-      # tooling target audit docs precisely. Watch for .gitignore patterns like
-      # `docs/*` that would silently block the subdirectory.]
+      # audit docs live in docs/audits/ — a flat docs/ dir gets noisy after ~10 audits,
+      # and a dedicated dir lets .gitignore rules and tooling target audit docs precisely.
+      # Watch for .gitignore patterns like `docs/*` that would silently block the subdirectory.
       - name: Find prior audit doc
         id: prior
         run: |
