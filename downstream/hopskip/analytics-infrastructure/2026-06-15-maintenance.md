@@ -103,3 +103,11 @@ This repo has fewer than 6 audit cycles. Do not add `docs/governance-health.md` 
 ## Not applicable — skip
 
 - Scheduled automation DoD section — skip unless this repo has cron jobs or scheduled CI
+
+## Verifiable outcomes
+
+- `test -f docs/issue-authoring.md` — issue-authoring policy exists
+- `test -f .github/workflows/audit-deadman.yml` — dead-man probe installed
+- `grep -q 'gate.*probe\|probe.*gate' .github/pull_request_template.md` — gate/probe classification row present in All PRs checklist
+- `grep -q 'Stale issue sweep' docs/definition-of-done.md` — stale issue sweep section present in DoD
+- `grep -q 'enforcement-bearing' docs/definition-of-done.md` — enforcement-bearing schema row present in Migration section

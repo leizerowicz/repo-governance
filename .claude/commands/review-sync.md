@@ -55,7 +55,23 @@ Two commit-message conventions, both load-bearing:
 
 ## Step 5: Per-repo maintenance prompts
 
-After the commit, generate a maintenance prompt for each governed repo that had markers in this sync run. Store each as `downstream/<client>/<repo>/YYYY-MM-DD-maintenance.md` (see `downstream/hopskip/_client.md` for the client/repo directory map).
+### 5.0 Pre-flight: check pending prompts from prior sync-reviews
+
+Before generating new prompts, open `downstream/<client>/_client.md` and read the Maintenance Log table. For each repo with status `pending` or `partial`:
+
+1. Note the prior prompt path and its `## Verifiable outcomes` section.
+2. If the repo is accessible locally (path is in the Governed Repos table), run each verification command. Report what has landed and what hasn't.
+3. Update the row in `_client.md`:
+   - All outcomes satisfied → `applied YYYY-MM-DD`
+   - Some satisfied → `partial — <brief note on what's missing>`
+   - None satisfied → leave `pending`, note in the new prompt that it supersedes the prior one
+4. If the prior prompt is still `pending`, fold any still-needed steps into the new prompt (don't generate a duplicate).
+
+---
+
+### 5.1 Generate prompts
+
+Generate a maintenance prompt for each governed repo that had markers in this sync run. Store each as `downstream/<client>/<repo>/YYYY-MM-DD-maintenance.md` (see `downstream/hopskip/_client.md` for the client/repo directory map).
 
 Each prompt is a self-contained Claude Code instruction — paste it into the target repo and run it. Write it as a direct instruction, not documentation.
 
@@ -84,6 +100,12 @@ You are updating this repo's governance to match the latest template improvement
 
 ## Not applicable — skip
 [Proposals that don't apply to this repo's stack, with one-line reason]
+
+## Verifiable outcomes
+[Shell-runnable one-liners that confirm the prompt's key artifacts landed.
+ Run from the repo root. Each line is an independent check.]
+- `<command>` — <what it confirms>
+- `<command>` — <what it confirms>
 ```
 
 **Scoping rules:**
@@ -91,6 +113,13 @@ You are updating this repo's governance to match the latest template improvement
 - If a proposal touches an artifact the repo doesn't have yet (e.g., no `code-hygiene.md`), include the bootstrap step, not just the delta
 - If a repo is early-stage, note what to defer and when to revisit (e.g., "add code-hygiene after the first audit cycle completes")
 - If no accepted proposals affect a given repo, skip generating a prompt for it
+- **Verifiable outcomes must be shell-runnable from the repo root** — use `test -f`, `grep -q`, or similar; one outcome per key artifact; cover the 3–5 most important deliverables, not every line changed
+
+---
+
+### 5.2 Update the maintenance log
+
+After generating prompts, add a row to the Maintenance Log table in `downstream/<client>/_client.md` for each new prompt, with status `pending`. If a prior pending prompt was folded into the new one, update the prior row to `superseded by YYYY-MM-DD`.
 
 ---
 

@@ -97,3 +97,11 @@ This repo has completed its first audit cycle. Begin tracking the Trend table ma
 ## Not applicable — skip
 
 - ADR Consequences rules — skip if this repo has no ADRs yet; add when the first ADR lands
+
+## Verifiable outcomes
+
+- `test -f docs/issue-authoring.md` — issue-authoring policy exists
+- `test -f .github/workflows/audit-deadman.yml` — dead-man probe installed
+- `grep -q 'gate.*probe\|probe.*gate' .github/pull_request_template.md` — gate/probe classification row present in All PRs checklist
+- `grep -q 'Stale issue sweep' docs/definition-of-done.md` — stale issue sweep section present in DoD
+- `grep -q 'enforcement-bearing' docs/definition-of-done.md` — enforcement-bearing schema row present in Migration section
