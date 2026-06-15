@@ -16,15 +16,13 @@ Last updated: 2026-06-14 (session 4)
 
 ## Current Sprint Focus
 
-First full sync from ai-fleet complete (2026-06-10): 35 `[PROPOSED]` markers across the templates, three new templates (governance-health, audit-deadman probe, issue-authoring), README/GETTING_STARTED/spec reconciled.
+Session 5 additions (2026-06-15):
+- **`/review-sync` run complete:** 36/36 proposals accepted from the 2026-06-10 ai-fleet sync. All 7 template files cleaned. Three new templates promoted: `issue-authoring.md`, `governance-health.md`, `audit-deadman.yml`. PR template and DoD substantially expanded.
+- **Maintenance prompts generated:** first batch in `downstream/hopskip/` for all three repos. enrichment-pipeline already applied theirs. ai-fleet and analytics-infrastructure pending.
+- **Tracking process added to `/review-sync`:** Step 5 now has three sub-steps — 5.0 pre-flight (grep downstream repos for prior prompt outcomes, update log), 5.1 generate prompts (every prompt requires `## Verifiable outcomes` shell checks), 5.2 update `_client.md` maintenance log.
+- **`_client.md` maintenance log:** tracks all prompts with `pending | applied YYYY-MM-DD | partial` status. Local repo paths added to governed-repos table.
 
-Session 4 additions (2026-06-14):
-- **`downstream/` structure added:** `downstream/_kickoff-prompt.md` (universal bootstrap prompt) + `downstream/hopskip/_client.md` (Hopskip client context, 3 repos listed).
-- **`/review-sync` gains Step 5:** generates per-repo maintenance prompts at `downstream/<client>/<repo>/YYYY-MM-DD-maintenance.md` after each review session.
-- **`/sync-from-repo` gains cross-repo calibration sources table:** enrichment-pipeline for code-hygiene, analytics-infrastructure for onboarding-friction signals.
-- **GTM updated:** slop-detection story added to Differentiation; cross-repo compounding added as Differentiation #4; multi-repo open question updated with current state.
-
-Next: run `/review-sync` in a fresh session to disposition the 35 markers. That session will generate the first maintenance prompts for ai-fleet, analytics-infrastructure, and enrichment-pipeline.
+Next: when ai-fleet and analytics-infrastructure apply their 2026-06-15 maintenance prompts, run `/review-sync` Step 5.0 to verify outcomes and update the log.
 
 ## Conventions (additions)
 
