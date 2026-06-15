@@ -17,7 +17,7 @@
 | Repo | Prompt | Status |
 |---|---|---|
 | HopSkipInc/enrichment-pipeline | [2026-06-15](enrichment-pipeline/2026-06-15-maintenance.md) | applied 2026-06-15 |
-| HopSkipInc/analytics-infrastructure | [2026-06-15](analytics-infrastructure/2026-06-15-maintenance.md) | pending |
-| HopSkipInc/ai-fleet | [2026-06-15](ai-fleet/2026-06-15-maintenance.md) | pending |
+| HopSkipInc/analytics-infrastructure | [2026-06-15](analytics-infrastructure/2026-06-15-maintenance.md) | applied 2026-06-15 |
+| HopSkipInc/ai-fleet | [2026-06-15](ai-fleet/2026-06-15-maintenance.md) | applied 2026-06-15 |
 
 Prompts are dated files in each repo's subdirectory. Run them in the respective repo's Claude Code context. Update status to `applied YYYY-MM-DD` once run, or `partial — <note>` if only some steps landed.

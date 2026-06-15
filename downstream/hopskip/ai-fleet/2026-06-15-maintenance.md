@@ -53,4 +53,4 @@ This repo is the governance source. Most of what was accepted in this sync-revie
 - `grep -q 'gate.*probe\|probe.*gate' .github/pull_request_template.md` — gate/probe classification row present in All PRs checklist
 - `grep -q 'past tense in this PR' .github/pull_request_template.md` — ADR Consequences past-tense row present
 - `grep -q 'Stale issue sweep' docs/definition-of-done.md` — stale issue sweep section present in DoD
-- `! grep -qE '^docs/\*' .gitignore` — no gitignore glob silently blocking docs/audits/
+- `grep -q '!docs/audits/' .gitignore` — docs/audits/ is explicitly whitelisted (exception present)

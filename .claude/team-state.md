@@ -22,7 +22,12 @@ Session 5 additions (2026-06-15):
 - **Tracking process added to `/review-sync`:** Step 5 now has three sub-steps — 5.0 pre-flight (grep downstream repos for prior prompt outcomes, update log), 5.1 generate prompts (every prompt requires `## Verifiable outcomes` shell checks), 5.2 update `_client.md` maintenance log.
 - **`_client.md` maintenance log:** tracks all prompts with `pending | applied YYYY-MM-DD | partial` status. Local repo paths added to governed-repos table.
 
-Next: when ai-fleet and analytics-infrastructure apply their 2026-06-15 maintenance prompts, run `/review-sync` Step 5.0 to verify outcomes and update the log.
+**2026-06-15 maintenance prompts — all applied:**
+- enrichment-pipeline: applied 2026-06-15
+- analytics-infrastructure: applied 2026-06-15 (5/5 outcomes verified)
+- ai-fleet: applied 2026-06-15 (3/4 checks pass; 4th was false positive — `docs/*` glob exists but `!docs/audits/` exception already present from PR #684; review-sync skill updated with `.gitignore` outcome check guidance)
+
+Next: no pending governance work. Resume when next sync-review cycle is due.
 
 ## Conventions (additions)
 

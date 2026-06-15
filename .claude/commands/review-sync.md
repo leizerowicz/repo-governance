@@ -114,6 +114,7 @@ You are updating this repo's governance to match the latest template improvement
 - If a repo is early-stage, note what to defer and when to revisit (e.g., "add code-hygiene after the first audit cycle completes")
 - If no accepted proposals affect a given repo, skip generating a prompt for it
 - **Verifiable outcomes must be shell-runnable from the repo root** — use `test -f`, `grep -q`, or similar; one outcome per key artifact; cover the 3–5 most important deliverables, not every line changed
+- **`.gitignore` outcomes: check the exception, not the glob** — `grep -q '!docs/audits/' .gitignore` (verifies the whitelist is present) is correct; `! grep -q 'docs/*' .gitignore` is a false positive whenever the glob exists for other reasons with a proper exception already in place
 
 ---
 
