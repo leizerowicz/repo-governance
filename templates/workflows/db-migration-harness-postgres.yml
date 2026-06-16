@@ -1,0 +1,47 @@
+# Kind: GATE — migration harness must pass before migration files can merge.
+# Wire as a required status check in branch protection settings.
+#
+# Runs the DbUp test-harness command against a Docker-spawned ephemeral Postgres
+# instance. The harness handles container lifecycle internally via --spawn-container:
+# it starts a Postgres container, applies all migrations + verification scripts,
+# validates seed data, then drops the DB and container.
+#
+# Customize before use:
+#   <DBMIGRATIONS_DIR>  — path to the DbUp .NET project relative to repo root
+#                         e.g. "dbmigrations" or "db/dbmigrations"
+#
+# Reference implementation: enrichment-pipeline dbmigrations/
+# Governance standard: templates/db-migration-governance.md
+
+name: DB Migration Harness
+
+on:
+  pull_request:
+    paths:
+      - '<DBMIGRATIONS_DIR>/**'
+      - '.github/workflows/db-migration-harness.yml'
+
+jobs:
+  harness:
+    name: Migration harness (ephemeral Postgres)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Run migration test harness
+        working-directory: <DBMIGRATIONS_DIR>
+        run: dotnet run --configuration Release -- test-harness --spawn-container
+
+      - name: Upload harness report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: migration-harness-report
+          path: <DBMIGRATIONS_DIR>/harness-report.json
+          if-no-files-found: warn

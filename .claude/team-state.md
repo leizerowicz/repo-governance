@@ -27,7 +27,21 @@ Session 5 additions (2026-06-15):
 - analytics-infrastructure: applied 2026-06-15 (5/5 outcomes verified)
 - ai-fleet: applied 2026-06-15 (3/4 checks pass; 4th was false positive — `docs/*` glob exists but `!docs/audits/` exception already present from PR #684; review-sync skill updated with `.gitignore` outcome check guidance)
 
-Next: no pending governance work. Resume when next sync-review cycle is due.
+Session 6 additions (2026-06-15):
+- **DB migration governance standard added:** `templates/db-migration-governance.md` — DbUp mandatory for all governed repos with a database (Postgres: `dbup-postgresql`, SQL Server: `dbup-sqlserver`). Squash triggers: (b) >50 non-baseline increments OR (c) major schema milestone. Archive replaced files to `scripts/migrations/archive/YYYYMMDD-squash/`. CI harness required as a PR gate (required status check, not advisory).
+- **Two new workflow templates:** `templates/workflows/db-migration-harness-postgres.yml` and `templates/workflows/db-migration-harness-sqlserver.yml` — Postgres variant uses `--spawn-container`; SQL Server variant uses GHA service container (`mcr.microsoft.com/mssql/server:2022-latest`).
+- **Three new maintenance prompts generated:**
+  - enrichment-pipeline: squash 62 files → baseline, wire harness as required PR gate
+  - ai-fleet: DbUp adoption — remove dead namespaces (archive, captains-log confirmed dead), create DbUp project, journal bootstrap from `schema_migrations` → `schemaversions`, new PR gate
+  - analytics-infrastructure: DbUp for SQL Server — 600+ idempotent scripts become day-0 baseline, no journal bootstrap needed (IF OBJECT_ID guards make re-application safe), replace go-sqlcmd loop in `schema.yml` deploy step
+- **Audit gap noted:** Governance audit should check for dead migration namespaces (dirs not referenced by any active runner). ai-fleet's archive/ and captains-log/ were dead but audit missed them. Audit checklist in `templates/db-migration-governance.md` now includes this check.
+
+**Pending DB migration work (all three repos):**
+- enrichment-pipeline: [2026-06-15-db-squash.md](../downstream/hopskip/enrichment-pipeline/2026-06-15-db-squash.md) — lightest lift
+- ai-fleet: [2026-06-15-db-dbup-migration.md](../downstream/hopskip/ai-fleet/2026-06-15-db-dbup-migration.md) — medium; journal bootstrap is the tricky step, test on dev first
+- analytics-infrastructure: [2026-06-15-db-dbup-migration.md](../downstream/hopskip/analytics-infrastructure/2026-06-15-db-dbup-migration.md) — heaviest but clean path; first prod run is slow (600+ no-op scripts), all subsequent runs are fast
+
+Next: no other pending governance work. Resume when next sync-review cycle is due or when a DB migration prompt is ready to apply.
 
 ## Conventions (additions)
 

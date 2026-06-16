@@ -1,0 +1,69 @@
+# Kind: GATE — migration harness must pass before migration files can merge.
+# Wire as a required status check in branch protection settings.
+#
+# Runs the DbUp test-harness command against a GHA-managed SQL Server container.
+# The harness connects to localhost:1433 using SA credentials supplied via env vars.
+# Unlike the Postgres variant, the container is managed by GHA services (not --spawn-container),
+# so the harness must read HARNESS_HOST/HARNESS_PORT/HARNESS_USER/HARNESS_PASSWORD from the environment.
+#
+# Customize before use:
+#   <DBMIGRATIONS_DIR>  — path to the DbUp .NET project relative to repo root
+#                         e.g. "sql/dbmigrations"
+#
+# The DbUp test-harness command must read connection params from these env vars:
+#   HARNESS_HOST, HARNESS_PORT, HARNESS_USER, HARNESS_PASSWORD
+# (or accept equivalent CLI flags — see your Program.cs implementation)
+#
+# Governance standard: templates/db-migration-governance.md
+
+name: DB Migration Harness
+
+on:
+  pull_request:
+    paths:
+      - '<DBMIGRATIONS_DIR>/**'
+      - '.github/workflows/db-migration-harness.yml'
+
+jobs:
+  harness:
+    name: Migration harness (ephemeral SQL Server)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    services:
+      sqlserver:
+        image: mcr.microsoft.com/mssql/server:2022-latest
+        env:
+          ACCEPT_EULA: Y
+          MSSQL_SA_PASSWORD: HarnessTest_123!
+        ports:
+          - 1433:1433
+        options: >-
+          --health-cmd "/opt/mssql-tools18/bin/sqlcmd -S localhost -U SA -P 'HarnessTest_123!' -Q 'SELECT 1' -C"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Run migration test harness
+        working-directory: <DBMIGRATIONS_DIR>
+        env:
+          HARNESS_HOST: localhost
+          HARNESS_PORT: 1433
+          HARNESS_USER: SA
+          HARNESS_PASSWORD: HarnessTest_123!
+        run: dotnet run --configuration Release -- test-harness
+
+      - name: Upload harness report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: migration-harness-report
+          path: <DBMIGRATIONS_DIR>/harness-report.json
+          if-no-files-found: warn
