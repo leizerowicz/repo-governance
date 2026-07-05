@@ -22,5 +22,8 @@
 | HopSkipInc/enrichment-pipeline | [2026-06-15 db-squash](enrichment-pipeline/2026-06-15-db-squash.md) | applied 2026-06-15 |
 | HopSkipInc/ai-fleet | [2026-06-15 db-dbup-migration](ai-fleet/2026-06-15-db-dbup-migration.md) | pending |
 | HopSkipInc/analytics-infrastructure | [2026-06-15 db-dbup-migration](analytics-infrastructure/2026-06-15-db-dbup-migration.md) | pending |
+| HopSkipInc/analytics-infrastructure | [2026-06-18 adr-lint + audit prep](analytics-infrastructure/2026-06-18-adr-lint-and-audit-prep.md) | pending |
+| HopSkipInc/analytics-infrastructure | [2026-07-05 competitive-intel watch](analytics-infrastructure/2026-07-05-competitive-intel-watch.md) | pending |
+| HopSkipInc/enrichment-pipeline | [2026-07-05 competitive-intel watch](enrichment-pipeline/2026-07-05-competitive-intel-watch.md) | pending |
 
 Prompts are dated files in each repo's subdirectory. Run them in the respective repo's Claude Code context. Update status to `applied YYYY-MM-DD` once run, or `partial — <note>` if only some steps landed.

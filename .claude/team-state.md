@@ -1,6 +1,6 @@
 # repo-governance — Team State
 
-Last updated: 2026-06-14 (session 4)
+Last updated: 2026-06-18 (session 7)
 
 ## Architecture & Key Decisions
 
@@ -40,6 +40,23 @@ Session 6 additions (2026-06-15):
 - enrichment-pipeline: [2026-06-15-db-squash.md](../downstream/hopskip/enrichment-pipeline/2026-06-15-db-squash.md) — lightest lift
 - ai-fleet: [2026-06-15-db-dbup-migration.md](../downstream/hopskip/ai-fleet/2026-06-15-db-dbup-migration.md) — medium; journal bootstrap is the tricky step, test on dev first
 - analytics-infrastructure: [2026-06-15-db-dbup-migration.md](../downstream/hopskip/analytics-infrastructure/2026-06-15-db-dbup-migration.md) — heaviest but clean path; first prod run is slow (600+ no-op scripts), all subsequent runs are fast
+
+Session 8 additions (2026-07-05):
+
+- **`templates/competitive-intel.md`:** New template codifying the competitive-intel watch-list format and Future items convention, propagated from ai-fleet migration 0291 (`8c84a12` — feat: surface competitive-intel watch items as Future items in scheduled audit).
+- **DoD Future items section added** to `templates/definition-of-done.md` Audit section — matches ai-fleet's addition to their DoD in the same commit.
+- **Watch-list sweep domain** added as domain 5 in `templates/workflows/scheduled-audit.yml` — scans `docs/competitive-intel/*.md` for unchecked watch-list lines, renders Future items section in audit reports, escalates due items to P2.
+- **PR template updated** — Documentation checklist now requires watch-list lines in competitive intel docs to have specific revisit conditions.
+- **Two new downstream prompts generated** (2026-07-05-competitive-intel-watch.md) for analytics-infrastructure and enrichment-pipeline — each creates the competitive-intel directory, updates DoD, and wires the sweep into their respective audit machines (audit-data-platform, audit-enrichment-pipeline) via ai-fleet migration.
+
+Session 7 additions (2026-06-18):
+- **lint:adr-readme-sync:** New governance lint. Every docs/adr/NNN-*.md must appear in docs/adr/README.md as a markdown link `(NNN-filename.md)`. Hard fail on any unregistered file. Catches ADR numbering collisions at PR time. Template at `templates/scripts/check-adr-readme-sync.mjs`.
+- **lint:universal-tool-doc-sync:** New ai-fleet-specific governance lint. Scans db/migrations/host/*.sql for `scope = 'all'` in executable SQL, extracts tool_ids via three patterns (WHERE clause, IN clause, INSERT VALUES), asserts each appears in docs/adding-an-agent.md. Hard fail on missing or unresolvable entries.
+- **ai-fleet wiring:** Both lints added to `host/package.json` (lint:adr-readme-sync, lint:universal-tool-doc-sync), to the `check` script chain, and to `.github/workflows/run-tests.yml`. Meta-lint passes at 28 scripts. Both lints pass clean on master.
+- **ai-fleet doc fix:** Added `post_for_acknowledgement` to the universal tools list in docs/adding-an-agent.md (was missing since migration 0192, June 2026; caught by the new lint).
+- **ai-fleet ADR fix:** Registered ADR-051 (In-Loop Context Compaction Policy) in docs/adr/README.md — was filed 2026-06-17 but not indexed; caught by the new lint on first run.
+- **analytics-infrastructure wiring:** lint:adr-readme-sync added as `scripts/lint-adr-readme-sync.mjs` and as `adr-readme-sync` gate job in `.github/workflows/code-hygiene.yml`. Passes clean (14 ADRs all registered).
+- **Propagation assessment:** enrichment-pipeline (no docs/adr/) and compliance (no docs/adr/) → lint:adr-readme-sync WONT-FIX; not applicable. lint:universal-tool-doc-sync is ai-fleet-specific; no other governed repo has the tools table with scope='all' semantics.
 
 Next: no other pending governance work. Resume when next sync-review cycle is due or when a DB migration prompt is ready to apply.
 

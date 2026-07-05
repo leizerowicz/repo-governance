@@ -150,6 +150,8 @@ A staleness audit runs on a schedule — as a CI workflow (`.github/workflows/sc
 
 **Dead-man probe.** A separate workflow watches for audit artifacts and goes red — and files a P1 issue — if none has appeared within a few days. A dead audit produces *nothing*, and nothing turns red on its own; the probe is the watchdog's watchdog, deliberately outside the mechanism it watches. It must depend only on repo artifacts — never on production credentials or upstream services.
 
+**Future items section.** The audit report includes a `## Future items` section from the competitive-intel watch-list sweep. It lists unchecked watch-list items from `docs/competitive-intel/*.md` with their source, date, and revisit condition. This section is informational — items whose revisit condition has arrived are escalated to P2 findings, but watch items with future conditions are tracked here without filing backlog issues. See `templates/competitive-intel.md` for the watch-list format and escalation rules.
+
 **P2 aging rule:** A P2 finding that carries across three consecutive audits without a fix or explicit deferral is either filed as a tracked issue (assigned, labeled, removed from the audit) or closed as WONT-FIX with written rationale. P2s that accumulate silently are indistinguishable from P1s that have been quietly de-prioritized.
 
 **Audit close-out is a required gate, not optional cleanup.** Before recording a clean audit: run the stale issue sweep above, merge any CI-green PRs that have been waiting, and verify every P0/P1/P2 has a fix, a tracking issue, or a WONT-FIX rationale.
