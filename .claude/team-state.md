@@ -1,6 +1,6 @@
 # repo-governance — Team State
 
-Last updated: 2026-07-07 (session 10)
+Last updated: 2026-07-16 (session 11)
 
 ## Architecture & Key Decisions
 
@@ -73,7 +73,23 @@ Session 7 additions (2026-06-18):
 Session 9 additions (2026-07-06):
 - **analytics-infrastructure reconciliation:** Verified all 4 downstream prompts applied. DbUp migration (#155) and ADR lint (#144) were already landed but our log showed `pending` — corrected to `applied 2026-07-05` and `applied 2026-07-03`. Watch-items sweep was still pending at check time; re-checked after user flag and found commit `b203235` landed same day with all 4 verifiable outcomes passing. `_client.md` fully reconciled: analytics-infrastructure has zero open governance prompts.
 
-Next: Zero open governance prompts. All three repos are current. `/review-sync` needs a reconciliation step added that reads each downstream repo's `### Applied governance updates` section to update `_client.md` (replacing the old write-back pattern). Resume when next sync-review cycle is due.
+Session 11 additions (2026-07-16):
+
+- **Product Decision Records (PDRs) — the fourth layer of why.** The repo governed three: why each rule exists (DoD callouts), why the code is shaped this way (ADRs), why the consultancy exists (`gtm/`, never synced). Nothing recorded why the *software* exists. The gap was structural, not an oversight: every audit domain compares one repo artifact to another, and purpose has no counterpart in the repo, so there was nothing to compare against. The audit could prove code drifted from docs; it could never prove the product drifted from its reason for existing.
+- **Why it mattered for the ICP:** non-technical founders. The contractor holds the code, the founder holds the thesis. Governance covered everything the contractor holds and nothing the founder holds — the one asset the buyer personally owns was the one the system didn't protect. `gtm/one-pager.md` already sells "a record of what was built and why".
+- **The load-bearing rule:** *a decision without a falsifier is a wish.* Every PDR ships with the observable condition that would retire it and cannot reach Accepted without one — the product-layer form of "enforcement ships with the promise". A PDR without a falsifier is a vision statement, and vision statements don't rot loudly.
+- **Design decisions:** PDR corpus (not a standing doc) so it reuses numbering, index, supersession, and the ADR audit domain. Non-goals are records with their own numbers, not sections — highest-signal artifact, since the audit can check shipped work against a stated non-goal and can do that for nothing else at this layer. Traceability at feature/epic level only, with `Serves: none` always legitimate.
+- **Sync firewall (the highest-stakes piece):** `/sync-from-repo` reads live client repos and abstracts into templates that ship to *other clients*. PDR content is a client's market thesis — frequently confidential, and identifying even anonymized, because a good PDR is specific enough to be wrong. **The shape syncs; the records never do.** Harder line than `gtm/`: that's propose-don't-apply, this is don't-propose. Same for `docs/watch-items/` bodies.
+- **`/review-sync` must never generate a PDR bootstrap prompt.** A prompt is what an agent runs alone, and an agent alone will invent a thesis or write a mission statement. A fabricated PDR is worse than an empty directory — it gets cited in review as though someone believed it. Prompts may install the form, index, ADR-023, and the lint, then say "book the interview".
+- **`pdr-interview` skill — a new skill shape.** Every other skill discovers by probing, which works because architecture is in the codebase. Purpose isn't. But blank-slate asking produces mush, so: probe first, draft candidates from cited evidence, surface the repo's self-contradictions, *then* ask. The contradictions are the interview — they're the one question a human can't answer with a platitude.
+- **Doctrine inversion, recorded in `sync-from-repo` Step 4:** these templates were authored *before* the source repo had them, inverting the normal harvest flow. They ship as **candidates**; the 3-cycle clock starts at ai-fleet adoption. Until then treat them as *less* authoritative than harvested templates — they've never been stress-tested against a real incident.
+- **Two bugs caught by running the templates instead of reading them.** (1) Following GETTING_STARTED literally turned CI red on day one — the lint registers every `NNN-*.md` and the blank form was named `000-template.md`. Renamed `_template.md`; underscore matches the existing `_client.md` convention. ADRs never hit this because `templates/adr/022-*` is a real record, not a form. (2) The audit swept the form as a record, reporting its placeholder falsifier as a real Future item every run. Same root cause both times: **a blank form in a records directory gets treated as a record.**
+- **Also fixed (pre-existing, found en route):** `c627809` reframed competitive-intel → watch-items across all three repos but never touched the templates. A repo bootstrapped today got a skill writing to `docs/watch-items/` and a sweep globbing `docs/competitive-intel/` — the sweep matched nothing and reported nothing, which is indistinguishable from "all items on hold". `templates/competitive-intel.md` → `templates/watch-items.md`, rewritten generic. GETTING_STARTED also claimed the audit covered "four domains" (stale since session 8; now six).
+- **README under-listing fixed:** `templates/` rows for db-migration-governance, watch-items, scripts, skills, and the harness workflows were missing from "What you get" — the leak `/review-sync` Step 3 exists to catch and wasn't catching.
+
+**PDR status:** templates + lint + audit wiring landed on `chore/session-10-cleanup`. **Not propagated.** Next: run `/pdr-interview` in ai-fleet, file 3–5 records, let it run 3 audit cycles, then sync back and generate downstream prompts. Known weakness: ai-fleet is internal tooling, so its thesis is thin — it's a strong test of the machinery (lint, sweep, index) and a weak test of the interview. BModelr is the real test of the interview whenever it's reachable (founder was unreachable Jun 17–30; case study ~Aug 2026).
+
+**Also open from session 10:** `/review-sync` still needs the reconciliation step that reads each downstream repo's `### Applied governance updates` section to update `_client.md` (replacing the old write-back pattern).
 
 ## Conventions (additions)
 
