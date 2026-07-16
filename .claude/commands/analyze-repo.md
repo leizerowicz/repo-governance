@@ -1,0 +1,354 @@
+---
+name: analyze-repo
+description: Statically probe a repo (local or GitHub URL), score its governance readiness, recommend which templates apply, and produce a customized bootstrap prompt — replaces the manual _kickoff-prompt.md fill-in workflow
+---
+
+# Governance Analyze Repo
+
+Statically probes a target repo, scores its governance readiness, and produces a customized bootstrap prompt. No code execution — directory listing, file reading, and manifest parsing only.
+
+**Usage:**
+- `/analyze-repo ~/repos/HopSkipInc/some-repo`
+- `/analyze-repo https://github.com/owner/repo`
+- `/analyze-repo . --client "Hopskip" --repo-slug "new-service"`
+
+---
+
+## Step 0: Parse input
+
+From the user's message, extract:
+- `TARGET` — local path or GitHub URL (required)
+- `CLIENT` — client/owner name from `--client` or prompt (optional — if absent, use `unknown`)
+- `REPO_SLUG` — repo slug from `--repo-slug` or prompt (optional — if absent, derive from repo name)
+- `FOCUS` — optional focus area or concern from `--focus` or prompt
+
+If the target is a GitHub URL, warn the user that remote probing is limited (public file listing only via `gh api` or WebFetch) and suggest cloning locally first. Continue with whatever level of access is available.
+
+If the target is a local path, verify it exists and is a git repo:
+```bash
+test -d "<TARGET>/.git" || echo "ERROR: not a git repo"
+```
+
+---
+
+### Quick pre-check: already governed?
+
+Before the full probe, check if this repo already has a governance sync section:
+
+```bash
+grep -l "governance-sync\|repo-governance\|## Governance" <TARGET>/CLAUDE.md <TARGET>/AGENTS.md 2>/dev/null
+```
+
+If found, read the section. If the repo already declares a repo-governance path and has applied governance updates, **stop here.** Report:
+
+```
+## Already governed — no bootstrap needed
+
+This repo has a governance sync section in <file>.
+It is already tracked in the repo-governance maintenance ledger.
+
+**Suggestion:** Use `/sync-from-repo` to check for template updates instead of bootstrap.
+```
+
+Continue with the full probe anyway if the user asks ("analyze it anyway" / "score it anyway"). The reposcape report is still useful for gap detection even on governed repos.
+
+---
+
+## Step 1: Static probe — gather the raw data
+
+Run all probes in parallel. For each probe, note whether the data was fetched locally or remotely.
+
+### 1.1 Language stack detection
+
+Check for lockfiles and manifests. For each found, note the language and version sources:
+
+```bash
+ls <TARGET>/package.json 2>/dev/null                      && echo "Node.js/TS — package.json"
+ls <TARGET>/Cargo.toml 2>/dev/null                        && echo "Rust — Cargo.toml"
+ls <TARGET>/go.mod 2>/dev/null                            && echo "Go — go.mod"
+ls <TARGET>/requirements.txt 2>/dev/null                  && echo "Python — requirements.txt"
+ls <TARGET>/pyproject.toml 2>/dev/null                    && echo "Python — pyproject.toml"
+ls <TARGET>/Gemfile 2>/dev/null                           && echo "Ruby — Gemfile"
+ls <TARGET>/composer.json 2>/dev/null                     && echo "PHP — composer.json"
+ls <TARGET>/build.gradle* 2>/dev/null                     && echo "Java/Kotlin — Gradle"
+ls <TARGET>/pom.xml 2>/dev/null                           && echo "Java — Maven"
+find <TARGET> -maxdepth 3 -name "*.sln" 2>/dev/null       | head -1 && echo ".NET — .sln (nested)"
+find <TARGET> -maxdepth 3 -name "*.csproj" 2>/dev/null    | head -1 && echo ".NET — .csproj (nested)"
+find <TARGET> -maxdepth 3 -name "*.fsproj" 2>/dev/null    | head -1 && echo "F# — .fsproj (nested)"
+find <TARGET> -maxdepth 3 -name "*.sqlproj" 2>/dev/null   | head -1 && echo "SQL Server — .sqlproj"
+find <TARGET> -maxdepth 3 -name "Dockerfile*" 2>/dev/null  | head -1 && echo "Docker — Dockerfile"
+ls <TARGET>/mix.exs 2>/dev/null                           && echo "Elixir — mix.exs"
+```
+
+Also check for monorepo patterns:
+```bash
+ls -d <TARGET>/packages/ 2>/dev/null                      && echo "monorepo:packages/"
+test -f <TARGET>/pnpm-workspace.yaml 2>/dev/null          && echo "monorepo:pnpm"
+test -f <TARGET>/lerna.json 2>/dev/null                   && echo "monorepo:lerna"
+test -f <TARGET>/turbo.json 2>/dev/null                   && echo "monorepo:turbo"
+```
+
+### 1.2 CI/CD config detection
+
+```bash
+ls <TARGET>/.github/workflows/*.yml 2>/dev/null           | head -20
+ls <TARGET>/azure-pipelines.yml 2>/dev/null
+ls <TARGET>/.gitlab-ci.yml 2>/dev/null
+ls <TARGET>/Jenkinsfile 2>/dev/null
+ls <TARGET>/.circleci/config.yml 2>/dev/null
+```
+
+Read the contents of any `scheduled-audit*.yml`, `audit-deadman*.yml`, or `lint*.yml` workflow files — note their presence and what they gate on.
+
+### 1.3 ADR directory detection
+
+```bash
+ls <TARGET>/docs/adr/ 2>/dev/null                         && echo "ADRs: docs/adr/"
+ls <TARGET>/adr/ 2>/dev/null                              && echo "ADRs: adr/"
+ls <TARGET>/adrs/ 2>/dev/null                             && echo "ADRs: adrs/"
+ls <TARGET>/decisions/ 2>/dev/null                        && echo "ADRs: decisions/"
+```
+
+If an ADR directory exists, count the files and read the highest-numbered ADR to determine the next available slot. Also check for an ADR index (`README.md` or `INDEX.md`) — note whether it exists.
+
+### 1.4 Governance artifact detection
+
+Check for each of the standard governance artifacts. Score each:
+
+| Artifact | What to check | Scoring |
+|---|---|---|
+| Definition of Done | `docs/definition-of-done.md` | PRESENT if exists with non-template content. PARTIAL if it's a raw template copy (has `[Fill in]` placeholders). ABSENT if missing. |
+| PR template | `.github/pull_request_template.md` or `.github/PULL_REQUEST_TEMPLATE.md` | PRESENT if exists. ABSENT if missing. |
+| Issue authoring | `docs/issue-authoring.md` | PRESENT if exists. ABSENT if missing. |
+| Scheduled audit | `.github/workflows/scheduled-audit*.yml`, OR DoD mentions an in-platform scheduler ("cron state machine", "audit.*machine", "audit-data-platform"), OR `docs/governance-health.md` (implies audit is running) | PRESENT if workflow, in-platform scheduler reference, or health doc exists. ABSENT if no trace of any audit mechanism. |
+| Audit deadman | `.github/workflows/audit-deadman*.yml` | PRESENT if exists. NOT_APPLICABLE if no scheduled audit. ABSENT if audit exists but no deadman. |
+| Governance health | `docs/governance-health.md` | PRESENT if exists. ABSENT if missing. NOT_APPLICABLE if fewer than 3 audit cycles. |
+| ADR lint | any workflow/lint that checks ADR ↔ README consistency | PRESENT if exists. ABSENT if missing. NOT_APPLICABLE if no ADR directory. |
+| DB migration CI | `.github/workflows/db-migration-harness*.yml` or equivalent | PRESENT if exists. ABSENT if DB migrations exist but no harness. NOT_APPLICABLE if no DB. |
+| CLAUDE.md section | `CLAUDE.md` or `AGENTS.md` contains a `## Governance` or `## Applied governance` section | PRESENT if governance section exists. ABSENT if CLAUDE.md exists but no governance section. NOT_APPLICABLE if no CLAUDE.md/AGENTS.md. |
+| Competitive intel | `docs/competitive-intel/` or `docs/watch-items/` | PRESENT if directory exists with files. ABSENT if missing. |
+
+Also check for domain-specific concerns that may indicate additional template applicability:
+- DB migrations directory (`migrations/`, `db/migrations/`, `sql/`) → `db-migration-governance.md`
+- Code quality lints (`code-hygiene.md`, `lint:` scripts in package.json) → note existing coverage
+- Skills directory (`.claude/skills/` or similar) → note agent tooling maturity
+
+### 1.5 File tree snapshot
+
+Read the top-level directory listing:
+```bash
+ls -1 <TARGET>/
+```
+
+And one level deep in each of these (if they exist):
+```bash
+for dir in src lib host func functions functions-dotnet docs .github .claude; do
+  test -d "<TARGET>/$dir" && echo "=== $dir ===" && ls -1 "<TARGET>/$dir/" | head -30
+done
+```
+
+### 1.6 README and CLAUDE.md
+
+Read `<TARGET>/README.md` (first 50 lines) and `<TARGET>/CLAUDE.md` or `<TARGET>/AGENTS.md` if they exist. Extract: project purpose, team size signals, existing conventions, any governance references already present.
+
+---
+
+## Step 2: Score and recommend
+
+### 2.1 Governance readiness score
+
+Assign one point per artifact in §1.4:
+- PRESENT = 2 points
+- PARTIAL = 1 point
+- ABSENT = 0 points
+- NOT_APPLICABLE = exclude from denominator
+
+```
+Score = (sum of points) / (2 × count of applicable artifacts) × 100
+```
+
+Present the score with a label:
+- 0–25: **Greenfield** — no governance artifacts. Full bootstrap needed.
+- 26–50: **Partial** — some artifacts exist but are template-default or incomplete.
+- 51–75: **Adopted** — most artifacts present, some gaps remain.
+- 76–100: **Mature** — full governance surface. Audit and refine, don't bootstrap.
+
+### 2.2 Template applicability matrix
+
+For each template in `~/repos/greg/repo-governance/templates/`, determine whether it applies:
+
+| Template | Applicable if | Priority | Rationale |
+|---|---|---|---|
+| `definition-of-done.md` | Always | P0 | Core artifact — everything else scaffolds off it |
+| `pull_request_template.md` | Always | P0 | Enforces DoD at PR submission |
+| `issue-authoring.md` | Backlog has >10 open issues or issue quality is a concern | P1 | Structure for backlog hygiene |
+| `scheduled-audit.yml` | Always (after DoD + PR template) | P0 | Compounding dynamic requires the audit loop |
+| `audit-deadman.yml` | scheduled-audit is applied | P0 | Required companion — audit without deadman is unverifiable |
+| `db-migration-governance.md` | DB detected (migrations dir, DbUp, Flyway, Alembic, etc.) | P1 | Migration safety is a DoD gate |
+| `db-migration-harness-*.yml` | DB migration governance applied | P2 | CI gate for the migration policy |
+| `competitive-intel.md` | Always (informational) | P2 | Watch-list format — low urgency, high compound value |
+| `governance-health.md` | After 3+ audit cycles | P2 (deferred) | Metrics need data to be meaningful |
+| `governance-sync-claude-section.md` | CLAUDE.md or AGENTS.md exists | P0 | Tells downstream agents about repo-governance |
+| `adr/022-definition-of-done.md` | DoD is being applied | P0 | Gives DoD its formal ADR authority |
+| `scripts/check-adr-readme-sync.mjs` | ADR directory exists | P1 | Prevents ADR index drift |
+| `skills/competitive-analysis/SKILL.md` | Team values competitive intel | P2 | Self-discovering skill — adds capability |
+
+### 2.3 Priority-ordered action plan
+
+Consolidate the matrix into an ordered list of concrete actions:
+
+```
+## What to apply (in order)
+
+1. [P0] <template> — <reason specific to this repo>
+2. [P0] <template> — <reason>
+3. [P1] <template> — <reason> (defer if: <condition>)
+...
+```
+
+Flag any actions that are already done (artifact PRESENT — "already applied, skip"). Flag any that are deferred with a revisit condition.
+
+---
+
+## Step 3: Produce output
+
+### 3.1 Display the analysis to the user
+
+Output the reposcape report to the terminal. Format:
+
+```
+# Governance Analysis — <REPO_SLUG>
+
+**Target:** <TARGET>  **Analyzed:** YYYY-MM-DD  **Focus:** <FOCUS or "broad sweep">
+
+## Repo snapshot
+
+| Dimension | Signal |
+|---|---|
+| Stack | <detected languages/frameworks> |
+| CI | <detected CI system> |
+| ADRs | <count> in <directory> (next: <slot>) |
+| DB presence | <yes/no — type> |
+| Monorepo | <yes/no — layout> |
+| Agent tooling | <CLAUDE.md present / skills dir / none> |
+
+## Governance score: XX/100 — <label>
+
+| Artifact | Status | Notes |
+|---|---|---|
+| <name> | PRESENT / PARTIAL / ABSENT / N/A | <detail> |
+| ... | | |
+
+## Priority action plan
+
+1. [P0] <action> — <one-line rationale>
+2. [P0] <action>
+...
+
+## Custom bootstrap prompt
+→ written to <output path>
+```
+
+### 3.2 Write the customized bootstrap prompt
+
+If `CLIENT` and `REPO_SLUG` are provided:
+```bash
+REPO_DIR="downstream/${CLIENT}/${REPO_SLUG}"
+mkdir -p "<REPO_DIR>"
+```
+Output path: `downstream/<CLIENT>/<REPO_SLUG>/YYYY-MM-DD-bootstrap.md`
+
+Otherwise:
+Output path: `/tmp/governance-bootstrap-YYYY-MM-DD.md`
+
+The bootstrap prompt is a single self-contained message to paste into Claude Code in the target repo. It MUST be customized — no `[FILL IN]` placeholders. Every blank is pre-filled from the probe data.
+
+Write the prompt following this structure:
+
+```markdown
+# Governance Bootstrap — <REPO_SLUG> — <DATE>
+
+Paste this into Claude Code in the <TARGET> repo.
+
+---
+
+We're adopting the governance framework from `~/repos/greg/repo-governance`. Your job is to set up governance for this repo by following GETTING_STARTED there.
+
+**Before starting:**
+1. Read `~/repos/greg/repo-governance/GETTING_STARTED.md` in full.
+2. Read this repo's current state: check what's in `docs/`, `.github/workflows/`, and `CLAUDE.md` (or whatever session instruction file this repo uses).
+
+**Repo context** (pre-filled from static analysis):
+- Client / owner: <CLIENT>
+- Repo purpose: <extracted from README first 50 lines, or "unknown — check README">
+- Stack: <detected languages/frameworks from §1.1>
+- Existing CI: <detected CI system from §1.2, or "none detected">
+- Existing docs: <summary of docs/ contents from §1.5, or "none detected">
+- Existing ADRs: <count from §1.3, or "none detected">
+- DB presence: <yes/no + type from §1.1, or "none detected">
+- Monorepo: <yes/no + layout from §1.1, or "no">
+- Agent instruction files: <CLAUDE.md / AGENTS.md / none>
+
+**What to apply (in order):**
+
+[INSERT THE PRIORITY-ORDERED ACTION PLAN FROM §2.3, CONVERTED TO NUMBERED STEP FORMAT.
+ Each step follows the pattern from downstream/_kickoff-prompt.md steps 1-6:
+ - File to copy from, file to write to
+ - Adaptation instructions specific to this repo's stack
+ - Skip instruction if artifact is already PRESENT]
+
+**Already present — skip:**
+[LIST ALL ARTIFACTS THAT SCORED PRESENT]
+
+**Deferred — revisit later:**
+[LIST ALL DEFERRED ACTIONS WITH THEIR REVISIT CONDITIONS]
+
+**Adaptation rules:**
+- Replace all placeholder CI commands (`[project CI check command]`, `npm run check`, etc.) with this repo's actual commands: <detected commands>
+- Replace `[project source directories]` with real paths: <detected source directories>
+- Drop "Why this rule exists" placeholders only if there is genuinely no incident to cite — never invent one
+- Don't add DoD rules without an enforcement plan — every rule is a promise, and an unenforced promise erodes the whole doc
+
+**After applying:**
+- Confirm `ANTHROPIC_API_KEY` is set as a GitHub Actions secret (the audit workflow needs it)
+- Verify each DoD row has a gating CI step, not just a manual checkbox — enforcement ships with the promise
+- Run the first audit: `gh workflow run scheduled-audit.yml` (or wait for the next scheduled run)
+- Treat the first audit as inventory, not a grade — work P0s this week, P1s next sprint, track P2s
+- Add the governance sync section to CLAUDE.md by applying `templates/governance-sync-claude-section.md`
+
+**Reference files (in `~/repos/greg/repo-governance`):**
+- `GETTING_STARTED.md` — full step-by-step guide with context
+- `templates/` — all template files
+- `docs/governance-health-spec.md` — add health metrics tracking after 3+ audit cycles
+```
+
+---
+
+## Step 4: Record the analysis
+
+Add a row to the maintenance log if CLIENT and REPO_SLUG were provided — either in `downstream/<CLIENT>/_client.md` (if it exists) or by creating a minimal client file:
+
+```markdown
+# <CLIENT> — Client Registry
+
+## Governed Repos
+
+| Repo | Path | Status | First analyzed |
+|---|---|---|---|
+| <REPO_SLUG> | `<TARGET>` | bootstrap needed — see YYYY-MM-DD-bootstrap.md | YYYY-MM-DD |
+
+## Maintenance Log
+
+| Date | Repo | Prompt | Status |
+|---|---|---|---|
+| YYYY-MM-DD | <REPO_SLUG> | downstream/<CLIENT>/<REPO_SLUG>/YYYY-MM-DD-bootstrap.md | pending |
+```
+
+---
+
+## Tips
+
+- The probe is static only — no `npm install`, no `cargo build`, no code execution. If a lockfile exists, note its presence; don't parse it.
+- If a governance artifact exists but is clearly a raw template copy (has `[Fill in]` placeholders from the original template), score it PARTIAL, not PRESENT. The bootstrap prompt should instruct the agent to customize it rather than skip it.
+- The `CLIENT` and `REPO_SLUG` flags are optional but recommended — they wire the analysis into the downstream maintenance ledger. Without them, the bootstrap prompt goes to `/tmp/` and there's no audit trail.
+- If the target repo is already governed (has a governance CLAUDE.md section with a repo-governance path), note this in the report and recommend `/sync-from-repo` instead of bootstrap — the repo is past the kickoff phase.
