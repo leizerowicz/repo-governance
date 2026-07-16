@@ -152,6 +152,15 @@ Both must exist. The PR gate is the primary safety net; the deploy-time harness 
 3. First DbUp run on existing environments: all scripts apply as no-ops (IF OBJECT_ID guards protect them), all get logged to `schemaversions`
 4. Going forward: new changes go in new numbered files using the standard append-only pattern
 5. No journal bootstrap needed — the idempotent guard is the mechanism
+6. **Update repo-local schema-change documentation.** Repos that previously used the idempotent-replay model often have documentation telling developers to "edit the existing file" (e.g. "add the column to the CREATE TABLE block AND add an ALTER TABLE ADD section in the same file"). Those instructions are now stale — they describe the pre-DbUp model where every file re-ran on every deploy. After DbUp adoption, editing an already-journaled file is invisible to the migration runner (the file is skipped by name). Every such doc must be updated to say "new schema changes go in new numbered files" in the same PR that adopts DbUp. Failure to do this causes stuck migrations: developers (and AI agents) follow the stale docs, edit existing files, and DbUp never runs the changes.
+
+   **Where to look:** Schema-change instructions can live in any file that agents or developers read for guidance. Check all of:
+   - Agent instruction files — `CLAUDE.md`, `AGENTS.md`, `.cursor/rules/`, `.github/copilot-instructions.md`, `GEMINI.md`, or any other tool-specific instruction file the repo uses
+   - ADRs — any architecture decision record that governs schema DDL patterns
+   - README and contributing guides — `README.md`, `CONTRIBUTING.md`, repo-root or `docs/` prose
+   - Pre-commit hook messages or lint script comments that reference the old pattern
+   
+   Search broadly: `grep -rI "both changes.*same file\|CREATE TABLE block\|ALTER TABLE ADD section\|edit.*existing.*migration\|re-run.*every.*deploy" .` and update or annotate every hit.
 
 ## Optional: schema metadata publishing
 
@@ -172,3 +181,4 @@ Governance audits should verify all of the following:
 - [ ] Non-baseline increment count is below 50; if above, a squash is planned or in-flight
 - [ ] Dead migration namespaces (directories with no active runner config referencing them) are removed or archived — a directory that exists but is not embedded by any DbUp project is dead
 - [ ] `scripts/migrations/NOTES.md` is present and documents any numbering quirks, intentional gaps, and squash history
+- [ ] Repo-local schema-change docs match the append-only discipline — no stale instructions telling developers or agents to edit existing migration files after deployment. Check all agent instruction files (`CLAUDE.md`, `AGENTS.md`, `.cursor/rules/`, `.github/copilot-instructions.md`, `GEMINI.md`, etc.), ADRs, README, and contributing guides. Search for patterns like "both changes in the same file", "add to the CREATE TABLE block", or "ALTER TABLE ADD section below" that describe the pre-DbUp idempotent-replay model
