@@ -15,6 +15,9 @@ Every issue body uses this structure:
 ## Work type
 <feature | enhancement | migration | bug | docs | epic | chore>
 
+## Serves
+<PDR-NNN — or "none — <one-line reason>". Features and epics only; omit for bugs and chores.>
+
 ## Verifiable outcomes (binary, observable)
 - [ ] <outcome 1 — binary, observable>
 - [ ] <outcome 2>
@@ -40,6 +43,9 @@ Rules:
 - The body must contain a **Work type** line, **or** carry a type label.
 
 For **epics**: "Verifiable outcomes" = "epic closes when all child issues close" **plus** 2–3 epic-level acceptance gates; list known child issue numbers under Dependencies.
+
+<!-- Delete this rule if your repo has no docs/pdr/ -->
+For **features and epics** (only): a **Serves** line naming the product decision this work advances (`PDR-NNN`), or `none` with a one-line reason. Bugs and chores don't carry it — an escape hatch that costs less than a lie is what stops the field from becoming decoration. The audit reports the orphan rate, not a compliance score: a few `none`s are healthy, a majority means the PDR corpus has stopped describing what the team is building.
 
 ## Label taxonomy
 

@@ -42,7 +42,7 @@ jobs:
         with:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
           prompt: |
-            Run a staleness audit on this repository. Check five domains in parallel:
+            Run a staleness audit on this repository. Check six domains in parallel:
 
             1. **ADR coherence** — if ADRs exist in docs/adr/, are they internally consistent,
                reflected in the code, and do they have the enforcement they promised?
@@ -61,15 +61,55 @@ jobs:
                fix is likely already merged (look for related PR titles), PRs open >7 days with
                green CI and no review activity.
 
-            5. **Competitive intel watch-list sweep** — scan docs/competitive-intel/*.md
-               for unchecked watch-list lines (grep pattern: `- [ ] **Watch list`). List
-               each hit under a `## Future items` section in the audit report: the item
-               text, source doc path, doc date, and stated revisit condition. Do NOT file
-               issues for items whose revisit condition has not arrived. If a condition has
-               arrived (date passed, named external event occurred), raise it as a P2
-               finding ("watch item due — re-evaluate or check it off in the source doc");
-               normal P2 carry rules apply. A checked-off watch-list line is resolved —
-               never report it.
+            5. **Watch-list sweep** — scan docs/watch-items/*.md for unchecked watch-list
+               lines (grep pattern: `- [ ] **Watch list`) AND docs/pdr/*.md for unchecked
+               falsifier lines (grep pattern: `- [ ] Revisit by`). A product bet with a
+               check condition is structurally a watch item; sweep both the same way.
+               **Skip any file whose name starts with `_` (e.g. `_template.md`) and any
+               README.md** — those are blank forms and indexes, not records. The form's
+               own placeholder falsifier ("Revisit by YYYY-MM-DD when <condition>") will
+               otherwise be reported as a real Future item on every single run.
+               List each hit under a `## Future items` section in the audit report: the
+               item text, source doc path, doc date, and stated revisit condition. Do NOT
+               file issues for items whose revisit condition has not arrived. If a
+               condition has arrived (date passed, named external event occurred), raise
+               it as a P2 finding ("watch item due — re-evaluate or check it off in the
+               source doc"); normal P2 carry rules apply. A checked-off line is resolved
+               — never report it.
+
+            6. **PDR coherence** — if docs/pdr/ exists, check the product decision corpus.
+               This domain reads intent from prose and will produce false positives; that
+               is why it is a probe and never a merge gate. When unsure, report at lower
+               severity rather than guessing confidently.
+
+               **A record is a file matching `NNN-*.md`. Nothing else in the directory is
+               a record** — `_template.md` is the blank form and `README.md` is the index.
+               The form lists every Status value on one line ("Proposed | Accepted | ...")
+               and carries a placeholder falsifier; read it as a record and you will report
+               findings against a document nobody wrote.
+
+               - Any PDR with Status **Accepted** and no `- [ ] Revisit by` falsifier line
+                 → P1. A decision without a falsifier is a wish; Accepted requires one.
+               - Any PDR whose falsifier condition is not observable (no date, no named
+                 event, no threshold — e.g. "revisit later", "revisit at next planning")
+                 → P2. The sweep cannot tell whether it is due.
+               - Any PDR whose `Last confirmed` date is more than 90 days old → P2
+                 ("bet unconfirmed for a quarter — re-confirm or supersede"). Nobody
+                 having looked at it is the condition under which stale bets survive.
+               - **Orphan check:** for feature PRs merged since the prior audit, and open
+                 issues labelled epic, check for a `Serves: PDR-NNN` reference. Report the
+                 count and list orphans as a single P2, not one finding each. `Serves:
+                 none` with a stated reason is a legitimate answer and is NOT an orphan —
+                 but if the `Serves: none` rate is above half, raise that as the finding
+                 instead: it means the corpus does not describe what the team is building.
+               - **Non-goal violation:** for each PDR whose Decision states something the
+                 project will deliberately NOT do, check whether work shipped since the
+                 prior audit contradicts it → P1. This is the highest-signal check in the
+                 domain. Cite the PDR number and the specific PR or file. If the non-goal
+                 was genuinely reconsidered, the fix is a superseding PDR, not silence.
+               - Any PDR file not registered in docs/pdr/README.md → P1, and note that
+                 lint:adr-readme-sync should have caught it (the lint is missing or not
+                 wired into CI).
 
             Prior audit: ${{ steps.prior.outputs.path }}
             ${{ github.event.inputs.notes && format('Context note: {0}', github.event.inputs.notes) || '' }}
@@ -83,9 +123,9 @@ jobs:
             - Headline counts table (Resolved / Superseded / Carried / New / Total open per severity)
             - Resolved section (findings from prior audit now fixed, with evidence)
             - P0 / P1 / P2 sections (full body per finding with Recommended action)
-            - Each finding ID: AUDIT-YYYY-MM-DD-DOMAIN-NN (DOMAIN = ADR/DOCS/CODE/BACKLOG)
+            - Each finding ID: AUDIT-YYYY-MM-DD-DOMAIN-NN (DOMAIN = ADR/DOCS/CODE/BACKLOG/PDR)
             - Carry findings forward from the prior audit if still open
-            - A "Future items" section (from the competitive-intel watch-list sweep): watch items with their source, date, and revisit condition — informational until the condition arrives
+            - A "Future items" section (from the watch-list sweep): watch items and PDR falsifiers with their source, date, and revisit condition — informational until the condition arrives
             - A "Close-out checklist" section: the ordered list of actions needed before this audit counts as closed
             - A "Recipe lessons" section: what this audit run itself revealed about the audit process — each lesson is a candidate DoD gate
 

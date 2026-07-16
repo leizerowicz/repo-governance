@@ -6,11 +6,19 @@
 
 <!-- If this fixes a GitHub issue, write "Fixes #N" here — GitHub closes it automatically on merge. Delete if not applicable. -->
 
+<!-- Delete this section if your repo has no docs/pdr/ -->
+## Serves
+
+<!-- Features and epics only. Which bet does this advance? Write "Serves: PDR-NNN".
+     If it advances none of them, write "Serves: none — <one-line reason>". That is a
+     legitimate answer; saying nothing is not. Delete for bug fixes and chores. -->
+
 ## Type
 
 <!-- Check the one that applies. Multiple types = multiple PRs (usually). -->
 
 - [ ] ADR
+- [ ] Product decision (PDR)
 - [ ] Feature
 - [ ] Bug fix
 - [ ] Migration
@@ -37,11 +45,20 @@
 - [ ] If completing work described in an existing ADR's Consequences: that bullet rewritten in past tense in this PR
 - [ ] Any Consequences bullet with forward-looking language ("will be," "future," "pending") has a tracking issue **or** an explicit `WONT-FIX: <rationale>`
 
+<!-- Delete this section if your repo has no docs/pdr/ -->
+### Product decision (PDR)
+- [ ] Falsifier line present and observable — a date, a named event, or a checkable threshold; not "revisit later"
+- [ ] `Confirmed by` names a person, not a role
+- [ ] Registered in `docs/pdr/README.md`; `lint:adr-readme-sync` passes
+- [ ] Status is **Proposed** unless the falsifier exists and the record is indexed (reviewer confirms)
+- [ ] If this supersedes an existing PDR: the old record's Status is flipped in **this PR**, its Context is left intact, and its Decision is not edited in place
+
 ### Feature
 - [ ] Integration test exists if the path touches a data store
 - [ ] Any new "Known Gaps" entry has a severity label and a tracking issue number
 - [ ] If this closes a tracked issue: `Fixes #N` is in the **Closes** section above
 - [ ] If this PR closes an issue: searched the docs for `#N` and updated any stale references pointing to it
+- [ ] <!-- delete if no docs/pdr/ --> `Serves: PDR-NNN` is in the description — or `Serves: none` with a one-line reason
 
 ### Bug fix
 - [ ] Regression test at the same level the bug manifested (unit or integration)
@@ -64,7 +81,7 @@
 - [ ] Every file path, function name, command, and issue number cited verified to exist
 - [ ] No contradictions with other sections in the same doc or linked docs
 - [ ] Planned features marked `(planned)`, not present-tense
-- [ ] If adding a competitive intel doc (`docs/competitive-intel/`): every **Watch list** line includes a specific revisit condition or date, not just "revisit later"
+- [ ] If adding a watch-item doc (`docs/watch-items/`): every **Watch list** line includes a specific revisit condition or date, not just "revisit later"
 
 ### Issue close (if this PR closes one)
 - [ ] `Fixes #N` or `Closes #N` is in the **Closes** section above — GitHub closes the issue automatically on merge

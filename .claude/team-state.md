@@ -1,6 +1,6 @@
 # repo-governance — Team State
 
-Last updated: 2026-06-18 (session 7)
+Last updated: 2026-07-16 (session 11)
 
 ## Architecture & Key Decisions
 
@@ -36,10 +36,10 @@ Session 6 additions (2026-06-15):
   - analytics-infrastructure: DbUp for SQL Server — 600+ idempotent scripts become day-0 baseline, no journal bootstrap needed (IF OBJECT_ID guards make re-application safe), replace go-sqlcmd loop in `schema.yml` deploy step
 - **Audit gap noted:** Governance audit should check for dead migration namespaces (dirs not referenced by any active runner). ai-fleet's archive/ and captains-log/ were dead but audit missed them. Audit checklist in `templates/db-migration-governance.md` now includes this check.
 
-**Pending DB migration work (all three repos):**
-- enrichment-pipeline: [2026-06-15-db-squash.md](../downstream/hopskip/enrichment-pipeline/2026-06-15-db-squash.md) — lightest lift
-- ai-fleet: [2026-06-15-db-dbup-migration.md](../downstream/hopskip/ai-fleet/2026-06-15-db-dbup-migration.md) — medium; journal bootstrap is the tricky step, test on dev first
-- analytics-infrastructure: [2026-06-15-db-dbup-migration.md](../downstream/hopskip/analytics-infrastructure/2026-06-15-db-dbup-migration.md) — heaviest but clean path; first prod run is slow (600+ no-op scripts), all subsequent runs are fast
+**DB migration work status:**
+- enrichment-pipeline: [2026-06-15-db-squash.md](../downstream/hopskip/enrichment-pipeline/2026-06-15-db-squash.md) — **applied 2026-06-15** (#408)
+- ai-fleet: [2026-06-15-db-dbup-migration.md](../downstream/hopskip/ai-fleet/2026-06-15-db-dbup-migration.md) — **applied 2026-07-06**
+- analytics-infrastructure: [2026-06-15-db-dbup-migration.md](../downstream/hopskip/analytics-infrastructure/2026-06-15-db-dbup-migration.md) — **applied 2026-07-05** (#155)
 
 Session 8 additions (2026-07-05):
 
@@ -48,6 +48,18 @@ Session 8 additions (2026-07-05):
 - **Watch-list sweep domain** added as domain 5 in `templates/workflows/scheduled-audit.yml` — scans `docs/competitive-intel/*.md` for unchecked watch-list lines, renders Future items section in audit reports, escalates due items to P2.
 - **PR template updated** — Documentation checklist now requires watch-list lines in competitive intel docs to have specific revisit conditions.
 - **Two new downstream prompts generated** (2026-07-05-competitive-intel-watch.md) for analytics-infrastructure and enrichment-pipeline — each creates the competitive-intel directory, updates DoD, and wires the sweep into their respective audit machines (audit-data-platform, audit-enrichment-pipeline) via ai-fleet migration.
+
+Session 10 additions (2026-07-07):
+
+- **`templates/skills/competitive-analysis/SKILL.md`:** Self-discovering competitive analysis skill. Instead of baking in repo-specific ADR lists, primitive names, and source paths, the skill teaches Agent B to *discover* the architecture at runtime: find the ADR directory, read all ADRs, read architecture docs, list the source tree, and synthesize primitives from what it finds. Agent A researches the external product in parallel. Synthesis produces a gap analysis with decision (integrate / steal ideas / watch / reject). Output lands in `docs/watch-items/`. This replaces the earlier `.claude/commands/` approach — skills are portable across harnesses (Claude Code, Codex, fleet workers) since they're plain markdown workflows, not CLI-specific slash commands.
+- **Single generic downstream prompt:** [2026-07-07-competitive-analysis-skill.md](../downstream/hopskip/2026-07-07-competitive-analysis-skill.md) — identical for all three governed repos. No per-repo customization. The skill discovers each repo's architecture at runtime.
+- **Reverted the repo-specific prompts** (analytics-infrastructure/2026-07-07-competitive-analysis-command.md and enrichment-pipeline/2026-07-07-competitive-analysis-command.md) — they encoded too much repo-specific knowledge (exact ADR filenames, source paths, primitive names) which doesn't scale to real clients.
+- **`templates/governance-sync-claude-section.md`:** A small CLAUDE.md section that tells downstream repo agents where repo-governance lives, what client name to use, and the convention for finding/applying/marking-done prompts. Without this breadcrumb, agents fly blind trying to "update from repo-governance."
+- **Single downstream prompt:** [2026-07-07-governance-sync-claude-section.md](../downstream/hopskip/2026-07-07-governance-sync-claude-section.md) — identical for all three repos. Each repo fills in its own slug. The section is intentionally tiny (~12 lines) — just enough for an agent to self-navigate.
+- **Key design principle:** repo-governance should teach *patterns and discovery methods*, not maintain a shadow mirror of each client's file tree. Skills that say "read all ADRs, read the architecture docs, discover the primitives" scale infinitely — skills that list `adr/0017-enrichment-prioritization.md` don't survive the next ADR write.
+- **Bug discovered (2026-07-07):** The governance-sync CLAUDE.md section told downstream agents to update `_client.md` in repo-governance (step 5). This is wrong — cross-repo writes create race conditions and violate the trust boundary. Downstream repos should never modify repo-governance files.
+- **Fix:** [2026-07-07-fix-governance-sync-ownership.md](../downstream/hopskip/2026-07-07-fix-governance-sync-ownership.md) — downstream agents now record applied prompts in their own CLAUDE.md under `### Applied governance updates`. repo-governance reconciles from there during `/review-sync`. Step 5 now explicitly warns "do not modify files in repo-governance."
+- **Reconciliation design:** `/review-sync` reads each downstream repo's `### Applied governance updates` section and updates `_client.md`. Downstream repos are read-only sources; repo-governance owns the ledger.
 
 Session 7 additions (2026-06-18):
 - **lint:adr-readme-sync:** New governance lint. Every docs/adr/NNN-*.md must appear in docs/adr/README.md as a markdown link `(NNN-filename.md)`. Hard fail on any unregistered file. Catches ADR numbering collisions at PR time. Template at `templates/scripts/check-adr-readme-sync.mjs`.
@@ -58,7 +70,26 @@ Session 7 additions (2026-06-18):
 - **analytics-infrastructure wiring:** lint:adr-readme-sync added as `scripts/lint-adr-readme-sync.mjs` and as `adr-readme-sync` gate job in `.github/workflows/code-hygiene.yml`. Passes clean (14 ADRs all registered).
 - **Propagation assessment:** enrichment-pipeline (no docs/adr/) and compliance (no docs/adr/) → lint:adr-readme-sync WONT-FIX; not applicable. lint:universal-tool-doc-sync is ai-fleet-specific; no other governed repo has the tools table with scope='all' semantics.
 
-Next: no other pending governance work. Resume when next sync-review cycle is due or when a DB migration prompt is ready to apply.
+Session 9 additions (2026-07-06):
+- **analytics-infrastructure reconciliation:** Verified all 4 downstream prompts applied. DbUp migration (#155) and ADR lint (#144) were already landed but our log showed `pending` — corrected to `applied 2026-07-05` and `applied 2026-07-03`. Watch-items sweep was still pending at check time; re-checked after user flag and found commit `b203235` landed same day with all 4 verifiable outcomes passing. `_client.md` fully reconciled: analytics-infrastructure has zero open governance prompts.
+
+Session 11 additions (2026-07-16):
+
+- **Product Decision Records (PDRs) — the fourth layer of why.** The repo governed three: why each rule exists (DoD callouts), why the code is shaped this way (ADRs), why the consultancy exists (`gtm/`, never synced). Nothing recorded why the *software* exists. The gap was structural, not an oversight: every audit domain compares one repo artifact to another, and purpose has no counterpart in the repo, so there was nothing to compare against. The audit could prove code drifted from docs; it could never prove the product drifted from its reason for existing.
+- **Why it mattered for the ICP:** non-technical founders. The contractor holds the code, the founder holds the thesis. Governance covered everything the contractor holds and nothing the founder holds — the one asset the buyer personally owns was the one the system didn't protect. `gtm/one-pager.md` already sells "a record of what was built and why".
+- **The load-bearing rule:** *a decision without a falsifier is a wish.* Every PDR ships with the observable condition that would retire it and cannot reach Accepted without one — the product-layer form of "enforcement ships with the promise". A PDR without a falsifier is a vision statement, and vision statements don't rot loudly.
+- **Design decisions:** PDR corpus (not a standing doc) so it reuses numbering, index, supersession, and the ADR audit domain. Non-goals are records with their own numbers, not sections — highest-signal artifact, since the audit can check shipped work against a stated non-goal and can do that for nothing else at this layer. Traceability at feature/epic level only, with `Serves: none` always legitimate.
+- **Sync firewall (the highest-stakes piece):** `/sync-from-repo` reads live client repos and abstracts into templates that ship to *other clients*. PDR content is a client's market thesis — frequently confidential, and identifying even anonymized, because a good PDR is specific enough to be wrong. **The shape syncs; the records never do.** Harder line than `gtm/`: that's propose-don't-apply, this is don't-propose. Same for `docs/watch-items/` bodies.
+- **`/review-sync` must never generate a PDR bootstrap prompt.** A prompt is what an agent runs alone, and an agent alone will invent a thesis or write a mission statement. A fabricated PDR is worse than an empty directory — it gets cited in review as though someone believed it. Prompts may install the form, index, ADR-023, and the lint, then say "book the interview".
+- **`pdr-interview` skill — a new skill shape.** Every other skill discovers by probing, which works because architecture is in the codebase. Purpose isn't. But blank-slate asking produces mush, so: probe first, draft candidates from cited evidence, surface the repo's self-contradictions, *then* ask. The contradictions are the interview — they're the one question a human can't answer with a platitude.
+- **Doctrine inversion, recorded in `sync-from-repo` Step 4:** these templates were authored *before* the source repo had them, inverting the normal harvest flow. They ship as **candidates**; the 3-cycle clock starts at ai-fleet adoption. Until then treat them as *less* authoritative than harvested templates — they've never been stress-tested against a real incident.
+- **Two bugs caught by running the templates instead of reading them.** (1) Following GETTING_STARTED literally turned CI red on day one — the lint registers every `NNN-*.md` and the blank form was named `000-template.md`. Renamed `_template.md`; underscore matches the existing `_client.md` convention. ADRs never hit this because `templates/adr/022-*` is a real record, not a form. (2) The audit swept the form as a record, reporting its placeholder falsifier as a real Future item every run. Same root cause both times: **a blank form in a records directory gets treated as a record.**
+- **Also fixed (pre-existing, found en route):** `c627809` reframed competitive-intel → watch-items across all three repos but never touched the templates. A repo bootstrapped today got a skill writing to `docs/watch-items/` and a sweep globbing `docs/competitive-intel/` — the sweep matched nothing and reported nothing, which is indistinguishable from "all items on hold". `templates/competitive-intel.md` → `templates/watch-items.md`, rewritten generic. GETTING_STARTED also claimed the audit covered "four domains" (stale since session 8; now six).
+- **README under-listing fixed:** `templates/` rows for db-migration-governance, watch-items, scripts, skills, and the harness workflows were missing from "What you get" — the leak `/review-sync` Step 3 exists to catch and wasn't catching.
+
+**PDR status:** templates + lint + audit wiring landed on `chore/session-10-cleanup`. **Not propagated.** Next: run `/pdr-interview` in ai-fleet, file 3–5 records, let it run 3 audit cycles, then sync back and generate downstream prompts. Known weakness: ai-fleet is internal tooling, so its thesis is thin — it's a strong test of the machinery (lint, sweep, index) and a weak test of the interview. BModelr is the real test of the interview whenever it's reachable (founder was unreachable Jun 17–30; case study ~Aug 2026).
+
+**Also open from session 10:** `/review-sync` still needs the reconciliation step that reads each downstream repo's `### Applied governance updates` section to update `_client.md` (replacing the old write-back pattern).
 
 ## Conventions (additions)
 

@@ -133,6 +133,16 @@ Add `Migration harness (ephemeral SQL Server)` to **Required status checks**.
 
 Update the PR template's **Migration** checklist to note that new schema objects go in new numbered files under `sql/schema/` (append-only from here), not by editing existing files.
 
+### 7. Update repo-local schema-change documentation
+
+**This step was missing from the original prompt and caused stuck migrations in July 2026.** PR #155 adopted DbUp but CLAUDE.md §Schema Changes and ADR-002 still instructed developers to "add the column to the CREATE TABLE block AND add an ALTER TABLE ADD section in the same file" — the pre-DbUp idempotent-replay pattern. Developers following those docs edited already-journaled files, which DbUp skipped by name, so changes never reached any environment.
+
+Fix in the same PR (or a follow-up PR if DbUp is already merged):
+
+1. **Agent instruction files** — search all files that agents or developers read for schema-change guidance: `CLAUDE.md`, `AGENTS.md`, `.cursor/rules/`, `.github/copilot-instructions.md`, `GEMINI.md`, or any other tool-specific instruction file. Rewrite schema-change sections to say new changes go in new numbered files. Remove the "both changes in the same file" pattern. Keep the idempotent DDL rules (IF OBJECT_ID guards, CREATE OR ALTER) as those still apply within each file, but clarify that the append-only model replaces the edit-existing-file model.
+2. **ADRs** — any architecture decision record that governs schema DDL patterns. Update the decision text to note that DbUp adoption supersedes the "same file" pattern. The idempotent DDL rules remain (they're still needed for fresh deploys and squash baselines), but the deployment model changed from "re-run everything" to "DbUp journals by name, edits to journaled files are invisible."
+3. **README, contributing guides, lint comments** — search the repo broadly: `grep -rI "both changes.*same file\|CREATE TABLE block\|ALTER TABLE ADD section\|edit.*existing.*migration\|re-run.*every.*deploy" .` and update or annotate every hit.
+
 ## Already present — skip
 
 - Idempotent DDL pattern throughout `sql/schema/` — no changes to existing files
@@ -153,3 +163,5 @@ Update the PR template's **Migration** checklist to note that new schema objects
 - `test -f .github/workflows/db-migration-harness.yml` — PR gate workflow exists
 - `grep -q 'mcr.microsoft.com/mssql/server' .github/workflows/db-migration-harness.yml` — SQL Server container configured
 - Branch protection: `gh api repos/HopSkipInc/analytics-infrastructure/branches/main --jq '.protection.required_status_checks.contexts[]' | grep -q 'Migration harness'`
+- `grep -rIc "both changes" CLAUDE.md AGENTS.md .github/copilot-instructions.md 2>/dev/null` — returns 0 (stale pattern removed from all agent instruction files)
+- `grep -rIc "new numbered files" CLAUDE.md AGENTS.md 2>/dev/null` — returns ≥1 (append-only instruction present in at least one agent instruction file)

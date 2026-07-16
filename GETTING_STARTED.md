@@ -32,7 +32,25 @@ If your repo uses ADRs:
 ```bash
 mkdir -p docs/adr
 cp path/to/repo-governance/templates/adr/022-definition-of-done.md docs/adr/022-definition-of-done.md
+cp path/to/repo-governance/templates/scripts/check-adr-readme-sync.mjs scripts/check-adr-readme-sync.mjs
 ```
+
+To record *why the software exists* — not just how the code is shaped (see Step 3):
+```bash
+mkdir -p docs/pdr
+cp path/to/repo-governance/templates/pdr/_template.md docs/pdr/_template.md
+cp path/to/repo-governance/templates/pdr/README.md docs/pdr/README.md
+cp path/to/repo-governance/templates/adr/023-product-decision-records.md docs/adr/023-product-decision-records.md   # if you use ADRs
+```
+
+If you want the watch-list convention and the skills:
+```bash
+cp path/to/repo-governance/templates/watch-items.md docs/watch-items.md
+cp -r path/to/repo-governance/templates/skills/competitive-analysis .claude/skills/
+cp -r path/to/repo-governance/templates/skills/pdr-interview .claude/skills/
+```
+
+If your repo has a database, also see `templates/db-migration-governance.md` and the matching `templates/workflows/db-migration-harness-*.yml`.
 
 ---
 
@@ -50,7 +68,28 @@ Open `docs/definition-of-done.md` and work through it:
 
 ---
 
-## Step 3 — Capture the implicit decisions (ADRs with enforcement)
+## Step 3 — Capture why the software exists (PDRs)
+
+<!-- Skip this step if you're not adopting docs/pdr/ -->
+
+Before you record how the code is shaped, record what it's for. Every project runs on a handful of product bets — who it serves, what it deliberately won't do, what has to become true for it to matter. Those bets authorize every architectural decision underneath them, and they are almost never written down.
+
+**This step is unlike the next one, and the difference is the point.** In Step 4 you can interview the codebase — consistent patterns that would be expensive to break are decisions, whether or not anyone wrote them down. **You cannot interview a codebase for purpose.** It isn't in there. It exists only in the head of whoever is making the call, so the only way to get it is to ask them.
+
+1. **Get the actual decision-maker in the room.** Not their proxy. A PDR corpus reconstructed by an engineer guessing at the founder's intent is fiction with line numbers.
+2. **Write 3–5 records** in `docs/pdr/`, following `templates/pdr/_template.md`. Include at least one **non-goal** — the thing you've already decided not to build. It's the highest-signal record and the least likely to exist anywhere else.
+3. **Every record ships with a falsifier** — the observable condition that would retire it. A date, a named event, a threshold. This is the whole gate: **a decision without a falsifier is a wish.** A record that can't be settled can't go stale loudly, and a bet that can't go stale loudly is one you'll keep building against long after it stopped being true.
+4. **Register each record in `docs/pdr/README.md`** — `check-adr-readme-sync.mjs` fails the build otherwise.
+
+**Claude Code users:** the `pdr-interview` skill does this properly — it probes the repo first, drafts candidates from real evidence, surfaces the places the repo contradicts itself about its own purpose, and only then asks. Blank-slate interviews produce mission statements; evidence-led interviews produce decisions.
+
+Expect resistance to the falsifiers. That's the artifact working — a falsifier is a commitment to being checkable, and people resist those for good reasons. Sit in it.
+
+Keep it to five or fewer.
+
+---
+
+## Step 4 — Capture the implicit decisions (ADRs with enforcement)
 
 Every codebase already runs on a handful of load-bearing architectural decisions that exist only in someone's head — "all DB access goes through the repository layer," "secrets never touch env vars," "migrations are append-only." Don't wait for the audit to trip over violations one at a time. Capture them now:
 
@@ -64,7 +103,7 @@ This step is what makes the practice survive personnel changes: the rules stop l
 
 ---
 
-## Step 4 — Add to CLAUDE.md (or your session instructions)
+## Step 5 — Add to CLAUDE.md (or your session instructions)
 
 Add these two things to whatever file describes your repo to Claude:
 
@@ -85,11 +124,11 @@ If you don't have a `CLAUDE.md`, see `docs/claude-md-additions.md` for the full 
 
 ---
 
-## Step 5 — Configure the audit workflow
+## Step 6 — Configure the audit workflow
 
 Open `.github/workflows/scheduled-audit.yml` and set the cron schedule to fit your cadence. The default is weekdays at 09:00 ET (14:00 UTC).
 
-The workflow prompt already covers four domains (ADR coherence, docs drift, codebase discipline, GitHub backlog). If your repo has specific patterns you want audited — a particular directory, a specific naming convention, a known recurring drift type — add them to the prompt's "also check" section.
+The workflow prompt already covers six domains (ADR coherence, docs drift, codebase discipline, GitHub backlog, watch-list sweep, PDR coherence). Delete the PDR domain if you're not adopting `docs/pdr/` — a domain that sweeps a directory you don't have reports nothing, which is indistinguishable from a clean result. If your repo has specific patterns you want audited — a particular directory, a specific naming convention, a known recurring drift type — add them to the prompt's "also check" section.
 
 Ensure `ANTHROPIC_API_KEY` is available as a secret.
 
@@ -99,7 +138,7 @@ The companion `audit-deadman.yml` is the watchdog's watchdog: if no audit artifa
 
 ---
 
-## Step 6 — Run your first audit
+## Step 7 — Run your first audit
 
 Either wait for the scheduled run or trigger it manually:
 
@@ -117,7 +156,7 @@ As you fix findings, note which ones could have been caught by a lint. Each one 
 
 ---
 
-## Step 7 — Add governance health tracking (optional, recommended after 3+ audit cycles)
+## Step 8 — Add governance health tracking (optional, recommended after 3+ audit cycles)
 
 Once you have three audit docs, you have enough data to measure whether the practice is working. The `docs/governance-health-spec.md` in this repo is an implementation brief — read it, then implement it in your repo.
 

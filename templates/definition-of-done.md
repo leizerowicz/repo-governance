@@ -31,6 +31,30 @@ Every piece of work has a type. A thing is done when the row for its type is ful
 
 ---
 
+<!-- Delete this section and the next if your repo has no docs/pdr/ -->
+### Product decision (PDR)
+
+- [ ] Decision states who is served, what bet is being made, or what is deliberately not being done — specifically enough to be wrong
+- [ ] **Falsifier is present** and observable: a date, a named external event, or a checkable threshold, written as `- [ ] Revisit by YYYY-MM-DD when <condition>`
+- [ ] `Confirmed by` names a person, not a role — a record nobody will sign is a record nobody believes
+- [ ] Status is **Proposed** until the falsifier exists and the record is registered in `docs/pdr/README.md`; **Accepted** only after
+- [ ] `lint:adr-readme-sync` passes — the record is indexed
+- [ ] If this PDR states a non-goal: it has its own number, not a bullet inside another record
+
+> **Why this rule exists:** [Fill in with your own incident. Example: "The team spent a full build window on a segment the founder had already privately decided against — the decision existed, but only in their head, so no PR review could cite it. Separately, a 'we serve enterprise' bet sat unexamined for eight months while every actual customer was a solo operator; nothing was wrong enough to notice, because nothing was written down to be wrong."]
+
+### PDR supersession (changing the bet)
+
+- [ ] New PDR written; it cites the record it replaces by number
+- [ ] Superseded record's Status set to **Superseded by PDR-NNN** in the same PR
+- [ ] Superseded record's Context left **intact** — what was believed and why it turned out wrong is the most valuable thing in the corpus
+- [ ] Original Decision never edited in place — changing your mind is healthy, changing it silently is the drift
+- [ ] Any work authorized only by the old bet is re-checked against the new one, or filed with a tracking issue
+
+> **Why this rule exists:** [Fill in with your own incident. Example: "The ICP changed and the strategy doc was quietly rewritten to match. Six months later nobody could reconstruct what the original bet was or what evidence had killed it, so the same rejected idea came back twice and got re-litigated from scratch both times."]
+
+---
+
 ### Feature
 
 - [ ] Unit tests cover the new code
@@ -40,8 +64,11 @@ Every piece of work has a type. A thing is done when the row for its type is ful
 - [ ] If the feature introduces a new pattern that could be violated: a lint ships in the same PR, wired into both the project's local check command and CI
 - [ ] If a required field is added to a shared interface or contract: every doc and onboarding guide that shows example objects of that interface is updated in the same PR
 - [ ] If this closes a tracked issue: `Fixes #N` is in the PR description — GitHub closes the issue automatically on merge
+- [ ] <!-- delete if no docs/pdr/ --> `Serves: PDR-NNN` in the PR description names the bet this feature advances — **or** `Serves: none` with a one-line reason. Both are legitimate; saying nothing is not
 
 > **Why this rule exists:** [Fill in with your own incident. Example: "A new dispatch path shipped with no integration test. A database constraint and a type cast both passed CI — the unit tests mocked the layer where both lived — and broke in production."]
+>
+> **Why `Serves:` allows "none":** an escape hatch cheaper than lying is what keeps the field honest. A mandatory field with no out gets filled with whatever passes review, and then the traceability is worse than useless because it looks real. The rate of `Serves: none` is the signal — a few is healthy, a majority means the PDR corpus doesn't describe what the team is actually building.
 
 ---
 
@@ -150,7 +177,10 @@ A staleness audit runs on a schedule — as a CI workflow (`.github/workflows/sc
 
 **Dead-man probe.** A separate workflow watches for audit artifacts and goes red — and files a P1 issue — if none has appeared within a few days. A dead audit produces *nothing*, and nothing turns red on its own; the probe is the watchdog's watchdog, deliberately outside the mechanism it watches. It must depend only on repo artifacts — never on production credentials or upstream services.
 
-**Future items section.** The audit report includes a `## Future items` section from the competitive-intel watch-list sweep. It lists unchecked watch-list items from `docs/competitive-intel/*.md` with their source, date, and revisit condition. This section is informational — items whose revisit condition has arrived are escalated to P2 findings, but watch items with future conditions are tracked here without filing backlog issues. See `templates/competitive-intel.md` for the watch-list format and escalation rules.
+**Future items section.** The audit report includes a `## Future items` section from the watch-list sweep. It lists unchecked watch-list items from `docs/watch-items/*.md` and unchecked PDR falsifiers from `docs/pdr/*.md` with their source, date, and revisit condition — a product bet with a check condition is structurally a watch item. This section is informational — items whose revisit condition has arrived are escalated to P2 findings, but items with future conditions are tracked here without filing backlog issues. See `templates/watch-items.md` for the watch-list format and escalation rules.
+
+<!-- Delete this paragraph if your repo has no docs/pdr/ -->
+**PDR coherence is a probe, not a gate.** The audit's PDR domain checks that accepted bets carry observable falsifiers, that nobody has left a bet unconfirmed for a quarter, that features name what they serve, and that shipped work doesn't contradict a stated non-goal. These read intent from prose, so they will occasionally be wrong — which is exactly why they are audit findings and never merge gates. A judgment call belongs in a probe; only deterministic checks belong in gates.
 
 **P2 aging rule:** A P2 finding that carries across three consecutive audits without a fix or explicit deferral is either filed as a tracked issue (assigned, labeled, removed from the audit) or closed as WONT-FIX with written rationale. P2s that accumulate silently are indistinguishable from P1s that have been quietly de-prioritized.
 

@@ -156,6 +156,12 @@ In GitHub → Settings → Branches → main → Branch protection rules:
 
 Add `Migration harness (ephemeral Postgres)` to **Required status checks**.
 
+### 8. Update repo-local schema-change documentation
+
+If the repo's agent instruction files (`CLAUDE.md`, `AGENTS.md`, `.cursor/rules/`, `.github/copilot-instructions.md`, `GEMINI.md`, etc.), ADRs, or README contain schema-change instructions that describe a pre-DbUp model (e.g. "edit the existing migration file", "re-run all scripts on every deploy", or any pattern where changes go into already-deployed files), update those docs to match the append-only discipline in the same PR. New schema changes go in new numbered migration files; existing journaled files are immutable.
+
+Search broadly: `grep -rI "both changes.*same file\|CREATE TABLE block\|ALTER TABLE ADD section\|edit.*existing.*migration\|re-run.*every.*deploy" .` and update or annotate each hit. ai-fleet used numbered migrations from inception, so this may be a no-op — but verify and annotate if so.
+
 ## Not in scope
 
 - Multi-schema DbUp (archive, captains-log) — dead namespaces removed; host is the only active schema
@@ -172,3 +178,4 @@ Add `Migration harness (ephemeral Postgres)` to **Required status checks**.
 - `cd db/dbmigrations && dotnet run -- test-harness --spawn-container` — harness passes on a clean ephemeral DB
 - `test -f .github/workflows/db-migration-harness.yml` — PR gate workflow exists
 - Branch protection: `gh api repos/HopSkipInc/ai-fleet/branches/main --jq '.protection.required_status_checks.contexts[]' | grep -q 'Migration harness'`
+- `grep -rIc "edit.*existing.*migration\|both changes.*same file\|re-run.*every.*deploy" CLAUDE.md AGENTS.md docs/adr/ 2>/dev/null` — returns 0 (no stale pre-DbUp instructions in any agent instruction file or ADR)
