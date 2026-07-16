@@ -127,6 +127,7 @@ Check for each of the standard governance artifacts. Score each:
 | DB migration CI | `.github/workflows/db-migration-harness*.yml` or equivalent | PRESENT if exists. ABSENT if DB migrations exist but no harness. NOT_APPLICABLE if no DB. |
 | CLAUDE.md section | `CLAUDE.md` or `AGENTS.md` contains a `## Governance` or `## Applied governance` section | PRESENT if governance section exists. ABSENT if CLAUDE.md exists but no governance section. NOT_APPLICABLE if no CLAUDE.md/AGENTS.md. |
 | Watch items | `docs/watch-items/` (or legacy `docs/competitive-intel/`) | PRESENT if directory exists with files. PARTIAL if only the legacy `docs/competitive-intel/` path exists — the sweep globs `docs/watch-items/`, so a legacy dir is swept by nothing. ABSENT if missing. |
+| Product decisions (PDR) | `docs/pdr/` with `NNN-*.md` records + `README.md` index | PRESENT if ≥1 record exists, the index registers them, and every record with Status **Accepted** carries an observable falsifier line (`- [ ] Revisit by`). PARTIAL if the directory exists but records lack falsifiers, the index is missing, or the records still carry template placeholders. ABSENT if missing. **Never NOT_APPLICABLE.** |
 
 Also check for domain-specific concerns that may indicate additional template applicability:
 - DB migrations directory (`migrations/`, `db/migrations/`, `sql/`) → `db-migration-governance.md`
@@ -167,6 +168,8 @@ Assign one point per artifact in §1.4:
 Score = (sum of points) / (2 × count of applicable artifacts) × 100
 ```
 
+**Product decisions are never NOT_APPLICABLE.** Every other artifact can be legitimately absent — deadman needs an audit to watch, health needs three cycles of data, ADR lint needs an ADR directory, DB harness needs a database. But every repo that exists has a reason to exist. Scoring PDR as N/A would be saying "this project doesn't need to know why it's being built," which is never true. A greenfield repo scores 0 here and that is a finding, not a technicality — expect most repos to, and say so plainly rather than softening it.
+
 Present the score with a label:
 - 0–25: **Greenfield** — no governance artifacts. Full bootstrap needed.
 - 26–50: **Partial** — some artifacts exist but are template-default or incomplete.
@@ -180,6 +183,7 @@ For each template in `~/repos/greg/repo-governance/templates/`, determine whethe
 | Template | Applicable if | Priority | Rationale |
 |---|---|---|---|
 | `definition-of-done.md` | Always | P0 | Core artifact — everything else scaffolds off it |
+| `pdr/` + `adr/023-product-decision-records.md` | Always | P0 | The only artifact recording *why* the software exists. Cannot be bootstrapped by reading the repo — requires interviewing the decision-maker (`skills/pdr-interview/`). Flag in the prompt that this step needs a human, not an agent working alone |
 | `pull_request_template.md` | Always | P0 | Enforces DoD at PR submission |
 | `issue-authoring.md` | Backlog has >10 open issues or issue quality is a concern | P1 | Structure for backlog hygiene |
 | `scheduled-audit.yml` | Always (after DoD + PR template) | P0 | Compounding dynamic requires the audit loop |
@@ -190,8 +194,9 @@ For each template in `~/repos/greg/repo-governance/templates/`, determine whethe
 | `governance-health.md` | After 3+ audit cycles | P2 (deferred) | Metrics need data to be meaningful |
 | `governance-sync-claude-section.md` | CLAUDE.md or AGENTS.md exists | P0 | Tells downstream agents about repo-governance |
 | `adr/022-definition-of-done.md` | DoD is being applied | P0 | Gives DoD its formal ADR authority |
-| `scripts/check-adr-readme-sync.mjs` | ADR directory exists | P1 | Prevents ADR index drift |
+| `scripts/check-adr-readme-sync.mjs` | ADR directory **or** PDR directory exists | P1 | Prevents index drift in both corpora — one script covers both |
 | `skills/competitive-analysis/SKILL.md` | Team values competitive intel | P2 | Self-discovering skill — adds capability |
+| `skills/pdr-interview/SKILL.md` | PDR corpus is being applied | P0 | How the PDR corpus actually gets written — the interview is the work, the record is the output |
 
 ### 2.3 Priority-ordered action plan
 

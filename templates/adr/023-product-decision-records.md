@@ -47,7 +47,7 @@ Enforcement, layered per the usual pattern:
 ## References
 
 - `docs/pdr/README.md` — the index the lint enforces
-- `templates/pdr/000-template.md` — the record format and falsifier discipline
+- `templates/pdr/_template.md` — the record format and falsifier discipline
 - `docs/definition-of-done.md` — the Product decision (PDR) and PDR supersession work types
 - `templates/watch-items.md` — the sweep mechanism the falsifiers hook into
 - `docs/adr/022-definition-of-done.md` — the rule this one extends to the product layer

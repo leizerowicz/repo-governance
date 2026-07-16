@@ -40,6 +40,12 @@ Read both versions of each governance artifact.
 - `templates/pull_request_template.md`
 - `templates/workflows/scheduled-audit.yml`
 - `templates/adr/022-definition-of-done.md`
+- `templates/adr/023-product-decision-records.md`
+- `templates/pdr/_template.md` and `templates/pdr/README.md`
+- `templates/issue-authoring.md`
+- `templates/watch-items.md`
+- `templates/scripts/check-adr-readme-sync.mjs`
+- `templates/skills/` — `competitive-analysis/`, `pdr-interview/`
 
 **Source repo (live implementation — paths relative to `<source repo root>`):**
 - `docs/definition-of-done.md`
@@ -56,6 +62,22 @@ Read both versions of each governance artifact.
 - `docs/issue-authoring.md` if it exists — canonical issue schema, label taxonomy, and the layered enforcement model behind the DoD's Issue/Epic section
 
 Adjust paths if the source repo organizes docs differently (e.g., `documentation/` instead of `docs/`). Use judgment.
+
+### 🚫 Firewall: `docs/pdr/` content never syncs
+
+**Read the source repo's `docs/pdr/` for shape only. Never for content.**
+
+This skill reads a live client repo and abstracts what it finds into templates that ship to **other clients**. A PDR corpus is the single most repo-specific artifact in the system — it is that client's market thesis, their customer evidence, who they've decided not to serve, and what would make them quit. It is frequently commercially confidential and occasionally legally so.
+
+There is no abstraction rule that makes "we're betting the agency segment churns by Q3" safe to carry into a shared template. The only safe handling is to not carry it.
+
+**Permitted:** noting that the corpus exists, how many records, whether falsifiers are present and observable, whether `Last confirmed` is being maintained, whether the index lint is wired — i.e. whether the *mechanism* is working, which is what informs `templates/pdr/`.
+
+**Forbidden:** quoting, paraphrasing, summarizing, or "abstracting" any Context, Decision, or Falsifier body into `templates/`, `README.md`, `GETTING_STARTED.md`, or `gtm/`. Not as an example. Not anonymized — a thesis is identifying even with the names filed off, because the whole point of a good PDR is that it's specific enough to be wrong.
+
+This is a harder line than `gtm/` (Step 6), which is merely *propose-don't-apply*. This is **don't propose**. If a PDR pattern seems worth generalizing, describe the structural property in the abstract — "records with unobservable falsifiers went unswept for months" — and say which repo it came from without saying what the bet was.
+
+The same firewall applies to `docs/watch-items/` bodies, which routinely carry competitive analysis of named third parties. The *format* syncs; the findings never do.
 
 ---
 
@@ -117,6 +139,8 @@ When the source repo's version contains implementation-specific details, abstrac
 | ADR numbers cited as authority (ADR-026, ADR-048, …) | Keep the *concept*, drop the number — e.g. "a gates-vs-probes CI taxonomy," "a dormant-schema register" |
 | Source-specific registries (`db/dormant-schema.json`, `tools` table, `tool_refs`) | Describe the pattern: "a register of schema elements awaiting consuming code, each with a tracking issue" |
 | Named lint scripts (`lint:schema-promises`, `lint:machine-governed-tools`) | "a lint enforces this" or `[project lint]` |
+| **Any PDR Context, Decision, or Falsifier body** | **Nothing — do not carry it in any form.** Not abstracted, not anonymized, not as an example. See the firewall in Step 1. The mechanism syncs; the bet never does |
+| **Any watch-item finding body** (competitor analysis, named third parties) | **Nothing** — the format syncs, the findings don't |
 
 **For "Why this rule exists" sections:**
 
@@ -133,6 +157,13 @@ If the template placeholder already has content, check whether the source repo's
 ## Step 4: Apply [PROPOSED] markers
 
 Apply changes directly to the repo-governance template files. Do not create new files — with one exception: a new template file is sanctioned when the Notes section names it as a candidate **and** its source structure has stabilized (3+ cycles in the source repo). Currently sanctioned candidates: `templates/governance-health.md`, `templates/workflows/audit-deadman.yml`, `templates/issue-authoring.md`. A new template gets a `<!-- [PROPOSED from source repo] New template — review before committing -->` header comment.
+
+**Candidate templates authored ahead of the source (the inverted case).** The rule above assumes patterns are harvested *from* a live repo. `templates/pdr/`, `templates/adr/023-*`, and `templates/skills/pdr-interview/` were authored here first, by deliberate design rather than harvest, and shipped before any source repo ran them (2026-07-16). They are **candidates**: their 3-cycle clock starts when ai-fleet adopts them, not when they were written.
+
+Until that clock runs out, treat them as *less* authoritative than harvested templates, not more:
+- If ai-fleet's live PDR practice diverges from these templates, **the implementation wins** — that's the standing rule (Step 5) and it applies with extra force here, because these templates have never been stress-tested against a real incident.
+- Do not propagate them to other governed repos on this skill's authority. Downstream prompts wait on ai-fleet.
+- The first real audit finding they produce is worth more than the whole design. Fold it back.
 
 **Marker formats:**
 

@@ -6,7 +6,7 @@ Templates and recipes for sustainable engineering governance: Definition of Done
 
 ## What this is
 
-A small, portable practice built around three observations:
+A small, portable practice built around four observations:
 
 1. **"CI is green" is not the same as "done."** Every codebase drifts — docs go stale, ADRs promise lints that never ship, bugs recur because there was no regression test. A Definition of Done (DoD) is a per-work-type checklist that makes "done" explicit before a PR merges.
 
@@ -14,17 +14,28 @@ A small, portable practice built around three observations:
 
 3. **The practice compounds.** Each audit finding that could have been a lint becomes a lint. Over time, the audit gets quieter and the signal improves. You start with the audit; the lints are its output.
 
+4. **A build can be perfectly disciplined and still be pointed at the wrong thing.** Every check above compares one repo artifact to another — code to docs, ADRs to lints. None of them can tell you the product drifted from its reason for existing, because purpose isn't in the repo to compare against. That failure is silent: no red CI, no failed test, just velocity in the wrong direction. Product Decision Records give it something to compare against.
+
 ## What you get
 
 | Artifact | Layer | What it does |
 |---|---|---|
 | `templates/definition-of-done.md` | Policy | Per-work-type done checklist |
 | `templates/adr/022-definition-of-done.md` | Policy | ADR giving DoD its authority (optional, for ADR-using repos) |
+| `templates/pdr/` | Policy | Product Decision Records — who this serves, what bet it makes, what it won't do. Every record carries the condition that would retire it |
+| `templates/adr/023-product-decision-records.md` | Policy | ADR giving PDRs their authority (optional, for ADR-using repos) |
 | `templates/pull_request_template.md` | Friction | `Fixes #N` prompt + per-type checklists on every PR |
 | `templates/workflows/scheduled-audit.yml` | Automation | Daily weekday Claude-powered staleness audit → PR |
 | `templates/workflows/audit-deadman.yml` | Automation | Dead-man probe — goes red and files a P1 if the audit itself silently dies |
+| `templates/workflows/db-migration-harness-*.yml` | Automation | Ephemeral-DB migration harness as a required PR gate (Postgres + SQL Server) |
 | `templates/issue-authoring.md` | Policy | Issue schema + label taxonomy so every issue is born actionable |
+| `templates/db-migration-governance.md` | Standard | DbUp mandate, append-only discipline, squash triggers, audit checklist |
+| `templates/watch-items.md` | Policy | Watch-list format — anything deferred on a condition, swept by the audit |
 | `templates/governance-health.md` | Measurement | Output shape for the auto-generated DORA-proxy metrics doc |
+| `templates/scripts/check-adr-readme-sync.mjs` | Lint (GATE) | Every ADR and PDR must be registered in its index — catches numbering collisions |
+| `templates/skills/competitive-analysis/` | Skill | Self-discovering competitive analysis → a watch-item doc + PR |
+| `templates/skills/pdr-interview/` | Skill | Probes the repo, then interviews the person who holds the thesis → a PDR corpus + PR |
+| `templates/governance-sync-claude-section.md` | Integration | CLAUDE.md breadcrumb so downstream agents can self-navigate to governance |
 | `docs/claude-md-additions.md` | Integration | The two lines to add to `CLAUDE.md` or session instructions |
 | `docs/governance-health-spec.md` | Measurement | Implementation spec for DORA-proxy metrics derived from audit docs |
 
@@ -43,6 +54,18 @@ Audit catches drift → finding prompts a lint → lint enforces pre-commit
 ```
 
 Start with just the audit and DoD. Add lints as ADRs accumulate. Don't wait until the lint exists to apply the ADR — the audit holds the gap. Once you have a few audit cycles, add governance health tracking to measure whether the practice is actually working.
+
+## The three layers of why
+
+Each layer answers a different question, and each has its own way of going stale:
+
+| Layer | Artifact | Answers | Retired by |
+|---|---|---|---|
+| Product | `docs/pdr/` | Why does this software exist at all? | Its falsifier firing |
+| Architecture | `docs/adr/` | Why is the code shaped this way? | Being superseded |
+| Rule | `docs/definition-of-done.md` | Why does this check exist? | The incident stopping |
+
+The bottom two are recoverable from the repo — you can interview a codebase for its architecture, since consistent patterns that would be expensive to break are decisions whether or not anyone wrote them down. **The top one isn't.** Purpose exists only in a human's head, which is why the PDR corpus is the one artifact here that can't be bootstrapped by reading code. See `templates/skills/pdr-interview/`.
 
 ## Keeping templates current
 

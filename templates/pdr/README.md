@@ -12,6 +12,12 @@ Every file in this directory must appear in the table below. The `lint:adr-readm
 | [002](002-not-building-mobile.md) | Not building mobile | Accepted | [DATE] |
 
 <!--
+`_template.md` is the blank form, not a record. The underscore prefix is load-bearing:
+lint:adr-readme-sync registers every file matching NNN-*.md, so a form named
+000-template.md would fail the build on day one, before anyone had written anything.
+Same convention as _client.md and _kickoff-prompt.md in repo-governance — underscore
+means "meta, not an instance". Do not renumber it.
+
 Replace the rows above with your own. They are illustrative, not a starter set —
 a PDR you did not decide is worse than no PDR.
 
