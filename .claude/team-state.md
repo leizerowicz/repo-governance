@@ -1,6 +1,6 @@
 # repo-governance — Team State
 
-Last updated: 2026-06-18 (session 7)
+Last updated: 2026-07-07 (session 10)
 
 ## Architecture & Key Decisions
 
@@ -36,10 +36,10 @@ Session 6 additions (2026-06-15):
   - analytics-infrastructure: DbUp for SQL Server — 600+ idempotent scripts become day-0 baseline, no journal bootstrap needed (IF OBJECT_ID guards make re-application safe), replace go-sqlcmd loop in `schema.yml` deploy step
 - **Audit gap noted:** Governance audit should check for dead migration namespaces (dirs not referenced by any active runner). ai-fleet's archive/ and captains-log/ were dead but audit missed them. Audit checklist in `templates/db-migration-governance.md` now includes this check.
 
-**Pending DB migration work (all three repos):**
-- enrichment-pipeline: [2026-06-15-db-squash.md](../downstream/hopskip/enrichment-pipeline/2026-06-15-db-squash.md) — lightest lift
-- ai-fleet: [2026-06-15-db-dbup-migration.md](../downstream/hopskip/ai-fleet/2026-06-15-db-dbup-migration.md) — medium; journal bootstrap is the tricky step, test on dev first
-- analytics-infrastructure: [2026-06-15-db-dbup-migration.md](../downstream/hopskip/analytics-infrastructure/2026-06-15-db-dbup-migration.md) — heaviest but clean path; first prod run is slow (600+ no-op scripts), all subsequent runs are fast
+**DB migration work status:**
+- enrichment-pipeline: [2026-06-15-db-squash.md](../downstream/hopskip/enrichment-pipeline/2026-06-15-db-squash.md) — **applied 2026-06-15** (#408)
+- ai-fleet: [2026-06-15-db-dbup-migration.md](../downstream/hopskip/ai-fleet/2026-06-15-db-dbup-migration.md) — **applied 2026-07-06**
+- analytics-infrastructure: [2026-06-15-db-dbup-migration.md](../downstream/hopskip/analytics-infrastructure/2026-06-15-db-dbup-migration.md) — **applied 2026-07-05** (#155)
 
 Session 8 additions (2026-07-05):
 
@@ -48,6 +48,18 @@ Session 8 additions (2026-07-05):
 - **Watch-list sweep domain** added as domain 5 in `templates/workflows/scheduled-audit.yml` — scans `docs/competitive-intel/*.md` for unchecked watch-list lines, renders Future items section in audit reports, escalates due items to P2.
 - **PR template updated** — Documentation checklist now requires watch-list lines in competitive intel docs to have specific revisit conditions.
 - **Two new downstream prompts generated** (2026-07-05-competitive-intel-watch.md) for analytics-infrastructure and enrichment-pipeline — each creates the competitive-intel directory, updates DoD, and wires the sweep into their respective audit machines (audit-data-platform, audit-enrichment-pipeline) via ai-fleet migration.
+
+Session 10 additions (2026-07-07):
+
+- **`templates/skills/competitive-analysis/SKILL.md`:** Self-discovering competitive analysis skill. Instead of baking in repo-specific ADR lists, primitive names, and source paths, the skill teaches Agent B to *discover* the architecture at runtime: find the ADR directory, read all ADRs, read architecture docs, list the source tree, and synthesize primitives from what it finds. Agent A researches the external product in parallel. Synthesis produces a gap analysis with decision (integrate / steal ideas / watch / reject). Output lands in `docs/watch-items/`. This replaces the earlier `.claude/commands/` approach — skills are portable across harnesses (Claude Code, Codex, fleet workers) since they're plain markdown workflows, not CLI-specific slash commands.
+- **Single generic downstream prompt:** [2026-07-07-competitive-analysis-skill.md](../downstream/hopskip/2026-07-07-competitive-analysis-skill.md) — identical for all three governed repos. No per-repo customization. The skill discovers each repo's architecture at runtime.
+- **Reverted the repo-specific prompts** (analytics-infrastructure/2026-07-07-competitive-analysis-command.md and enrichment-pipeline/2026-07-07-competitive-analysis-command.md) — they encoded too much repo-specific knowledge (exact ADR filenames, source paths, primitive names) which doesn't scale to real clients.
+- **`templates/governance-sync-claude-section.md`:** A small CLAUDE.md section that tells downstream repo agents where repo-governance lives, what client name to use, and the convention for finding/applying/marking-done prompts. Without this breadcrumb, agents fly blind trying to "update from repo-governance."
+- **Single downstream prompt:** [2026-07-07-governance-sync-claude-section.md](../downstream/hopskip/2026-07-07-governance-sync-claude-section.md) — identical for all three repos. Each repo fills in its own slug. The section is intentionally tiny (~12 lines) — just enough for an agent to self-navigate.
+- **Key design principle:** repo-governance should teach *patterns and discovery methods*, not maintain a shadow mirror of each client's file tree. Skills that say "read all ADRs, read the architecture docs, discover the primitives" scale infinitely — skills that list `adr/0017-enrichment-prioritization.md` don't survive the next ADR write.
+- **Bug discovered (2026-07-07):** The governance-sync CLAUDE.md section told downstream agents to update `_client.md` in repo-governance (step 5). This is wrong — cross-repo writes create race conditions and violate the trust boundary. Downstream repos should never modify repo-governance files.
+- **Fix:** [2026-07-07-fix-governance-sync-ownership.md](../downstream/hopskip/2026-07-07-fix-governance-sync-ownership.md) — downstream agents now record applied prompts in their own CLAUDE.md under `### Applied governance updates`. repo-governance reconciles from there during `/review-sync`. Step 5 now explicitly warns "do not modify files in repo-governance."
+- **Reconciliation design:** `/review-sync` reads each downstream repo's `### Applied governance updates` section and updates `_client.md`. Downstream repos are read-only sources; repo-governance owns the ledger.
 
 Session 7 additions (2026-06-18):
 - **lint:adr-readme-sync:** New governance lint. Every docs/adr/NNN-*.md must appear in docs/adr/README.md as a markdown link `(NNN-filename.md)`. Hard fail on any unregistered file. Catches ADR numbering collisions at PR time. Template at `templates/scripts/check-adr-readme-sync.mjs`.
@@ -58,7 +70,10 @@ Session 7 additions (2026-06-18):
 - **analytics-infrastructure wiring:** lint:adr-readme-sync added as `scripts/lint-adr-readme-sync.mjs` and as `adr-readme-sync` gate job in `.github/workflows/code-hygiene.yml`. Passes clean (14 ADRs all registered).
 - **Propagation assessment:** enrichment-pipeline (no docs/adr/) and compliance (no docs/adr/) → lint:adr-readme-sync WONT-FIX; not applicable. lint:universal-tool-doc-sync is ai-fleet-specific; no other governed repo has the tools table with scope='all' semantics.
 
-Next: no other pending governance work. Resume when next sync-review cycle is due or when a DB migration prompt is ready to apply.
+Session 9 additions (2026-07-06):
+- **analytics-infrastructure reconciliation:** Verified all 4 downstream prompts applied. DbUp migration (#155) and ADR lint (#144) were already landed but our log showed `pending` — corrected to `applied 2026-07-05` and `applied 2026-07-03`. Watch-items sweep was still pending at check time; re-checked after user flag and found commit `b203235` landed same day with all 4 verifiable outcomes passing. `_client.md` fully reconciled: analytics-infrastructure has zero open governance prompts.
+
+Next: Zero open governance prompts. All three repos are current. `/review-sync` needs a reconciliation step added that reads each downstream repo's `### Applied governance updates` section to update `_client.md` (replacing the old write-back pattern). Resume when next sync-review cycle is due.
 
 ## Conventions (additions)
 
