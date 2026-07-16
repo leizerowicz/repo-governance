@@ -126,7 +126,7 @@ Check for each of the standard governance artifacts. Score each:
 | ADR lint | any workflow/lint that checks ADR ↔ README consistency | PRESENT if exists. ABSENT if missing. NOT_APPLICABLE if no ADR directory. |
 | DB migration CI | `.github/workflows/db-migration-harness*.yml` or equivalent | PRESENT if exists. ABSENT if DB migrations exist but no harness. NOT_APPLICABLE if no DB. |
 | CLAUDE.md section | `CLAUDE.md` or `AGENTS.md` contains a `## Governance` or `## Applied governance` section | PRESENT if governance section exists. ABSENT if CLAUDE.md exists but no governance section. NOT_APPLICABLE if no CLAUDE.md/AGENTS.md. |
-| Competitive intel | `docs/competitive-intel/` or `docs/watch-items/` | PRESENT if directory exists with files. ABSENT if missing. |
+| Watch items | `docs/watch-items/` (or legacy `docs/competitive-intel/`) | PRESENT if directory exists with files. PARTIAL if only the legacy `docs/competitive-intel/` path exists — the sweep globs `docs/watch-items/`, so a legacy dir is swept by nothing. ABSENT if missing. |
 
 Also check for domain-specific concerns that may indicate additional template applicability:
 - DB migrations directory (`migrations/`, `db/migrations/`, `sql/`) → `db-migration-governance.md`
@@ -186,7 +186,7 @@ For each template in `~/repos/greg/repo-governance/templates/`, determine whethe
 | `audit-deadman.yml` | scheduled-audit is applied | P0 | Required companion — audit without deadman is unverifiable |
 | `db-migration-governance.md` | DB detected (migrations dir, DbUp, Flyway, Alembic, etc.) | P1 | Migration safety is a DoD gate |
 | `db-migration-harness-*.yml` | DB migration governance applied | P2 | CI gate for the migration policy |
-| `competitive-intel.md` | Always (informational) | P2 | Watch-list format — low urgency, high compound value |
+| `watch-items.md` | Always (informational) | P2 | Watch-list format — low urgency, high compound value |
 | `governance-health.md` | After 3+ audit cycles | P2 (deferred) | Metrics need data to be meaningful |
 | `governance-sync-claude-section.md` | CLAUDE.md or AGENTS.md exists | P0 | Tells downstream agents about repo-governance |
 | `adr/022-definition-of-done.md` | DoD is being applied | P0 | Gives DoD its formal ADR authority |

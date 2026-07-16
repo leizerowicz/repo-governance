@@ -61,15 +61,14 @@ jobs:
                fix is likely already merged (look for related PR titles), PRs open >7 days with
                green CI and no review activity.
 
-            5. **Competitive intel watch-list sweep** — scan docs/competitive-intel/*.md
-               for unchecked watch-list lines (grep pattern: `- [ ] **Watch list`). List
-               each hit under a `## Future items` section in the audit report: the item
-               text, source doc path, doc date, and stated revisit condition. Do NOT file
-               issues for items whose revisit condition has not arrived. If a condition has
-               arrived (date passed, named external event occurred), raise it as a P2
-               finding ("watch item due — re-evaluate or check it off in the source doc");
-               normal P2 carry rules apply. A checked-off watch-list line is resolved —
-               never report it.
+            5. **Watch-list sweep** — scan docs/watch-items/*.md for unchecked watch-list
+               lines (grep pattern: `- [ ] **Watch list`). List each hit under a
+               `## Future items` section in the audit report: the item text, source doc
+               path, doc date, and stated revisit condition. Do NOT file issues for items
+               whose revisit condition has not arrived. If a condition has arrived (date
+               passed, named external event occurred), raise it as a P2 finding ("watch
+               item due — re-evaluate or check it off in the source doc"); normal P2 carry
+               rules apply. A checked-off watch-list line is resolved — never report it.
 
             Prior audit: ${{ steps.prior.outputs.path }}
             ${{ github.event.inputs.notes && format('Context note: {0}', github.event.inputs.notes) || '' }}
@@ -85,7 +84,7 @@ jobs:
             - P0 / P1 / P2 sections (full body per finding with Recommended action)
             - Each finding ID: AUDIT-YYYY-MM-DD-DOMAIN-NN (DOMAIN = ADR/DOCS/CODE/BACKLOG)
             - Carry findings forward from the prior audit if still open
-            - A "Future items" section (from the competitive-intel watch-list sweep): watch items with their source, date, and revisit condition — informational until the condition arrives
+            - A "Future items" section (from the watch-list sweep): watch items with their source, date, and revisit condition — informational until the condition arrives
             - A "Close-out checklist" section: the ordered list of actions needed before this audit counts as closed
             - A "Recipe lessons" section: what this audit run itself revealed about the audit process — each lesson is a candidate DoD gate
 

@@ -64,7 +64,7 @@
 - [ ] Every file path, function name, command, and issue number cited verified to exist
 - [ ] No contradictions with other sections in the same doc or linked docs
 - [ ] Planned features marked `(planned)`, not present-tense
-- [ ] If adding a competitive intel doc (`docs/competitive-intel/`): every **Watch list** line includes a specific revisit condition or date, not just "revisit later"
+- [ ] If adding a watch-item doc (`docs/watch-items/`): every **Watch list** line includes a specific revisit condition or date, not just "revisit later"
 
 ### Issue close (if this PR closes one)
 - [ ] `Fixes #N` or `Closes #N` is in the **Closes** section above — GitHub closes the issue automatically on merge
