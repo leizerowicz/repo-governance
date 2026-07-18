@@ -137,6 +137,27 @@ Templates: `templates/workflows/db-migration-harness-postgres.yml` and `template
 
 Both must exist. The PR gate is the primary safety net; the deploy-time harness is a belt-and-suspenders check.
 
+<!-- [PROPOSED from source repo] New section — review and adapt before committing -->
+## Breaking-migration lint (required PR gate)
+
+The harness gate above catches migrations that fail to *apply*. It does not catch a
+migration that applies cleanly but drops or renames a column/table while code elsewhere
+still queries the old identifier — this can slip through even when the migration and its
+paired code fix land in the same PR, if a second, unrelated call site is missed.
+
+- Script: `templates/scripts/check-breaking-migrations.mjs`
+- Kind: **GATE** — deterministic diff-text check, no DB connection needed
+- Checks: `DROP COLUMN`, `DROP TABLE`, `RENAME COLUMN` statements still in effect after
+  replaying all migrations in order, cross-referenced against every source directory
+  that queries the database
+
+<!-- [PROPOSED — replace with your incident. Example pattern from source repo: an outage
+where a schema drop and its intended code fix landed together, but a second, unrelated
+file still queried the dropped column and nothing mechanical caught it.] -->
+> **Why this gate exists:** a migration and its paired code change can both be correct in
+> isolation and still break production, if a second file depends on the identifier being
+> removed and nobody thought to check the whole repo, not just the obvious call site.
+
 ## Adopting DbUp in an existing repo
 
 **Repo has a custom runner (non-DbUp):**
@@ -177,6 +198,7 @@ Governance audits should verify all of the following:
 
 - [ ] DbUp project exists and targets the correct DB engine (Postgres or SQL Server)
 - [ ] `db-migration-harness` workflow exists and is wired as a required status check in branch protection
+- [ ] <!-- [PROPOSED from source repo] --> Breaking-migration lint (`check-breaking-migrations.mjs` or equivalent) is wired as a required PR gate — a dropped/renamed column or table has zero remaining code references
 - [ ] No migration file has been mutated after its merge commit — verify with `git log --follow -p <file>` for any suspicious edits post-merge
 - [ ] Non-baseline increment count is below 50; if above, a squash is planned or in-flight
 - [ ] Dead migration namespaces (directories with no active runner config referencing them) are removed or archived — a directory that exists but is not embedded by any DbUp project is dead

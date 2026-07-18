@@ -58,10 +58,12 @@ Every piece of work has a type. A thing is done when the row for its type is ful
 ### Feature
 
 - [ ] Unit tests cover the new code
+- [ ] <!-- [PROPOSED from source repo; npm repos] --> The test script actually runs the tests — no `echo "not implemented" && exit 0` reporting false-green; `lint:stub-tests` (report mode) catches this — see `templates/scripts/lint-stub-tests.mjs`
 - [ ] Integration test if the path touches a data store — must use the same wiring the runtime uses, not a standalone test double, and must call the top-level entry point (not just an inner helper) so constraints and identifier resolution are exercised, not bypassed
 - [ ] Affected docs updated and internally consistent — no section contradicts another
 - [ ] Any new "Known Gaps" entry has a severity label and a tracking issue number; "Known Gap" without a tracking issue is not acceptable
 - [ ] If the feature introduces a new pattern that could be violated: a lint ships in the same PR, wired into both the project's local check command and CI
+- [ ] <!-- [PROPOSED from source repo; TypeScript repos] --> No new magic string or inline type union duplicates an existing exported alias, and no new SQL query duplicates an existing one instead of being centralized — see `templates/scripts/check-magic-strings.mjs`, `check-inline-type-unions.mjs`, `check-duplicated-sql.mjs`
 - [ ] If a required field is added to a shared interface or contract: every doc and onboarding guide that shows example objects of that interface is updated in the same PR
 - [ ] If this closes a tracked issue: `Fixes #N` is in the PR description — GitHub closes the issue automatically on merge
 - [ ] <!-- delete if no docs/pdr/ --> `Serves: PDR-NNN` in the PR description names the bet this feature advances — **or** `Serves: none` with a one-line reason. Both are legitimate; saying nothing is not
@@ -91,6 +93,8 @@ Every piece of work has a type. A thing is done when the row for its type is ful
 - [ ] If data-manipulation SQL (UPDATE, DELETE, INSERT with type casts): a post-migration integrity check is included to guard against production data surprises — fresh-DB CI is not sufficient alone
 - [ ] If the migration introduces a new schema pattern consumed by code: the consuming code path has an integration test in the same PR or a P0 issue filed
 - [ ] If the migration adds an enforcement-bearing schema element (an access policy, a rate-limit or lifecycle column, a tenancy flag): the consuming code ships in the same PR, **or** the element is registered in a dormant-schema register with a tracking issue and an activation condition. Schema that promises a control nobody built is a defect, not a head start.
+- [ ] <!-- [PROPOSED from source repo] --> This rule is lint-enforced, not just reviewed: `lint:schema-promises` confirms every enforcement-bearing element has a real consumer or a valid register entry — see `templates/scripts/check-schema-promises.mjs`
+- [ ] <!-- [PROPOSED from source repo] --> If the migration drops or renames a column/table: a breaking-migration lint confirms zero remaining code references before merge — see `templates/db-migration-governance.md`
 
 > **Why this rule exists:** [Fill in with your own incident. Example: "A data-manipulation migration passed CI against an empty database but failed in production where rows had unexpected values. Separately, a schema review found four enforcement mechanisms the schema promised and no code delivered — inert access policies, phantom rate limits, a dead lifecycle column — all silent for months because no control ever asked 'does anything consume this?'"]
 

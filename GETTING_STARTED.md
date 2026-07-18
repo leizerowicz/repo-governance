@@ -50,7 +50,32 @@ cp -r path/to/repo-governance/templates/skills/competitive-analysis .claude/skil
 cp -r path/to/repo-governance/templates/skills/pdr-interview .claude/skills/
 ```
 
-If your repo has a database, also see `templates/db-migration-governance.md` and the matching `templates/workflows/db-migration-harness-*.yml`.
+If your repo has a database, also see `templates/db-migration-governance.md` and the matching `templates/workflows/db-migration-harness-*.yml`. If it has migrations, also copy the breaking-migration gate (edit `MIGRATIONS_DIR` and `SOURCE_DIRS` at the top of the file for your layout):
+```bash
+cp path/to/repo-governance/templates/scripts/check-breaking-migrations.mjs scripts/check-breaking-migrations.mjs
+```
+
+If your repo is TypeScript, the following three lints catch duplicated values/types and duplicated inline SQL before they drift (edit `SRC_DIR` at the top of each file):
+```bash
+cp path/to/repo-governance/templates/scripts/check-magic-strings.mjs scripts/check-magic-strings.mjs
+cp path/to/repo-governance/templates/scripts/check-inline-type-unions.mjs scripts/check-inline-type-unions.mjs
+cp path/to/repo-governance/templates/scripts/check-duplicated-sql.mjs scripts/check-duplicated-sql.mjs   # only if your repo embeds SQL as backtick template literals
+```
+
+Every repo — no language dependency, edit `ALLOWED` for your actual top-level entries:
+```bash
+cp path/to/repo-governance/templates/scripts/check-root-clutter.mjs scripts/check-root-clutter.mjs
+```
+
+If your repo has migrations that add enforcement-bearing schema (RLS policies, rate-limit or lifecycle columns), edit `MIGRATIONS_DIR`/`SOURCE_DIRS`/`ENFORCEMENT_COLUMNS` for your layout:
+```bash
+cp path/to/repo-governance/templates/scripts/check-schema-promises.mjs scripts/check-schema-promises.mjs
+```
+
+If your repo uses npm test scripts, this catches false-green stubs (report mode, not a gate):
+```bash
+cp path/to/repo-governance/templates/scripts/lint-stub-tests.mjs scripts/lint-stub-tests.mjs
+```
 
 ---
 

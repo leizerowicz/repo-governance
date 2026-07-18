@@ -33,6 +33,13 @@ A small, portable practice built around four observations:
 | `templates/watch-items.md` | Policy | Watch-list format — anything deferred on a condition, swept by the audit |
 | `templates/governance-health.md` | Measurement | Output shape for the auto-generated DORA-proxy metrics doc |
 | `templates/scripts/check-adr-readme-sync.mjs` | Lint (GATE) | Every ADR and PDR must be registered in its index — catches numbering collisions |
+| `templates/scripts/check-breaking-migrations.mjs` | Lint (GATE) | A dropped/renamed migration column or table must have zero remaining code references |
+| `templates/scripts/check-magic-strings.mjs` | Lint (GATE, TS repos) | A value from an exported type alias used as a magic string instead of the alias's constant |
+| `templates/scripts/check-inline-type-unions.mjs` | Lint (GATE, TS repos) | An inline string-literal union that duplicates an exported type alias elsewhere |
+| `templates/scripts/check-duplicated-sql.mjs` | Lint (GATE, TS repos) | A SQL query inlined in 2+ files instead of centralized in one registry/adapter |
+| `templates/scripts/check-root-clutter.mjs` | Lint (GATE) | Repo root holds project-defining files only — working files must live in a subdirectory |
+| `templates/scripts/check-schema-promises.mjs` | Lint (GATE) | An enforcement-bearing schema element (RLS policy, rate-limit/lifecycle column) must have a real consumer or a tracked dormant-schema entry |
+| `templates/scripts/lint-stub-tests.mjs` | Lint (REPORT, npm repos) | A `test`/`test:*` script that exits 0 without running anything — false-green CI |
 | `templates/skills/competitive-analysis/` | Skill | Self-discovering competitive analysis → a watch-item doc + PR |
 | `templates/skills/pdr-interview/` | Skill | Probes the repo, then interviews the person who holds the thesis → a PDR corpus + PR |
 | `templates/governance-sync-claude-section.md` | Integration | CLAUDE.md breadcrumb so downstream agents can self-navigate to governance |
