@@ -1,6 +1,6 @@
 # repo-governance — Team State
 
-Last updated: 2026-07-18 (session 12)
+Last updated: 2026-07-23 (session 13)
 
 ## Architecture & Key Decisions
 
@@ -139,3 +139,14 @@ Session 12 additions (2026-07-18):
 - DORA mapping section removed from founder-ICP one-pager — not the buyer's vocabulary.
 - "Launch window coverage" engagement shape is new and not in the CTO one-pager — formalized from BModelr pattern.
 - **Git push auth (leizerowicz repos):** The `gh-real` credential helper reads `~/.config/gh/hosts.yml`, where the default account is `greghopskip` (no write access to `leizerowicz/*` repos). `gh auth switch` doesn't help when `GH_TOKEN` env is unset but the helper still picks the wrong account. **Fix:** push with the token inline: `TOKEN=$(gh auth token) && git push https://gleizerowicz:${TOKEN}@github.com/leizerowicz/<repo>.git <branch>`. The `gh auth token` command returns the active account's token (gleizerowicz when that's the active `gh` account).
+
+Session 13 additions (2026-07-23):
+
+- **Five-layer governance sweep — the big restructure.** The practice went from three layers (PDR, ADR, DoD rule) to five: PDRs, ADRs, clean code, test coverage, agent instructions. Each layer has a skill that follows the pdr-interview pattern (probe → evidence agent → interview → write → PR) but tuned for its layer's evidence-to-knowledge ratio. Four of five can be bootstrapped by probing the codebase; only PDRs require human origination (purpose is not in the codebase).
+- **Four new skills shipped:** `adr-interview` (probes for load-bearing patterns, lints without ADRs, module contradictions; every ADR ships with enforcement), `clean-code-interview` (probes naming/organization conventions, triages enforce/document/drop), `test-coverage-interview` (maps coverage gaps, false-green traps, threshold status; interview fills in strategy), `agent-instructions-interview` (reconciles CLAUDE.md against reality, surfaces tribal knowledge/gotchas).
+- **ADR template shipped:** `templates/adr/_template.md` (blank form with Enforcement section, parallel to PDR's Falsifier) + `templates/adr/README.md` (index with Enforcement column). The PDR template had a form; the ADR side didn't. Now they're at parity.
+- **GETTING_STARTED restructured:** Steps 3-7 are now the five-layer sweep with a summary table showing each layer's skill and evidence-vs-interview dynamic. Old Step 5 (CLAUDE.md) absorbed into Step 7 (agent instructions). Old Steps 6-8 renumbered to 8-10.
+- **Five-layer interaction graph designed (not shipped as artifact, recorded in discussion):** Authorization flows top-down (PDR → ADR → clean code + test coverage → agent instructions). Evidence flows bottom-up (agent instructions/coverage/conventions reveal ADRs; ADRs hint at PDRs). The audit is the circular edge — catches drift at every layer. DoD and audit are meta-mechanisms that *derive from* the five layers, not layers themselves. The derivation step (generating DoD checklist items and audit domains from the layer artifacts) is designed but not yet built — a derivation script/skill is the natural next step.
+- **Five-layer refresh cycle wired (closed loop):** DoD has new "Governance layer refresh" work type with staleness triggers table. Governance-sync section has layer staleness check + Layer refresh log table. Audit has domain 7 (governance layer staleness) — detects drifted layers, recommends refresh skill as P2 finding. GETTING_STARTED has "Ongoing practice" section with the closed-loop diagram. README compounding dynamic updated from linear to self-correcting loop. Key principle: refresh what's stale, not everything — five layers have independent staleness clocks.
+- **Issue #4 filed:** MCP server research for downstream governance-sync. The file-based polling (read `_client.md`, check triggers, compare dates) works but is read-poll-repeat. An MCP server collapses it into one call. Constraints: cheapest viable path, no new auth model, no infrastructure before the practice needs it. Research only — no code yet.
+- **Next session planned:** Dogfood the five interview skills against this repo (repo-governance governing itself). Run adr-interview, clean-code-interview, test-coverage-interview, and agent-instructions-interview against repo-governance to stress-test the skill prompts and discover what the evidence agents surface. The pdr-interview lesson: "two bugs caught by running the templates instead of reading them."
