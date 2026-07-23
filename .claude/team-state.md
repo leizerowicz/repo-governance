@@ -138,3 +138,4 @@ Session 12 additions (2026-07-18):
 
 - DORA mapping section removed from founder-ICP one-pager — not the buyer's vocabulary.
 - "Launch window coverage" engagement shape is new and not in the CTO one-pager — formalized from BModelr pattern.
+- **Git push auth (leizerowicz repos):** The `gh-real` credential helper reads `~/.config/gh/hosts.yml`, where the default account is `greghopskip` (no write access to `leizerowicz/*` repos). `gh auth switch` doesn't help when `GH_TOKEN` env is unset but the helper still picks the wrong account. **Fix:** push with the token inline: `TOKEN=$(gh auth token) && git push https://gleizerowicz:${TOKEN}@github.com/leizerowicz/<repo>.git <branch>`. The `gh auth token` command returns the active account's token (gleizerowicz when that's the active `gh` account).
