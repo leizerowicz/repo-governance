@@ -93,63 +93,167 @@ Open `docs/definition-of-done.md` and work through it:
 
 ---
 
-## Step 3 — Capture why the software exists (PDRs)
+## Steps 3–7 — The five-layer governance sweep
+
+A repo under governance has five layers of "why." Each has a skill that probes the
+codebase, drafts candidates from real evidence, and walks the person who holds the
+knowledge through confirming, correcting, and filling in the gaps. Run them in order —
+each layer authorizes the one below it.
+
+| Step | Layer | What it captures | Skill | Evidence vs. interview |
+|------|-------|-----------------|-------|----------------------|
+| 3 | Product (PDRs) | Why the software exists | `pdr-interview` | Interview is origination — purpose is not in the codebase |
+| 4 | Architecture (ADRs) | How the code is shaped | `adr-interview` | Probe is primary — architecture IS in the codebase; interview confirms |
+| 5 | Clean code | How code is written | `clean-code-interview` | Probe + triage — sorting intentional conventions from accidental patterns |
+| 6 | Test coverage | How code is verified | `test-coverage-interview` | Probe maps what exists; interview fills in the strategy |
+| 7 | Agent instructions | How agents are briefed | `agent-instructions-interview` | Probe reconciles docs with reality; interview surfaces tribal knowledge |
+
+**Each skill follows the same five-step pattern:** discover the repo → spawn a background
+evidence agent → interview the human (evidence-led, one question at a time) → write
+records → open a PR. The interview dynamics differ by layer — that's the design. A PDR
+interview asks you to *originate* (purpose is in your head). An ADR interview asks you to
+*confirm* (the codebase already shows the decision). A clean code interview asks you to
+*triage* (intentional vs. accidental). A test coverage interview asks you to *fill gaps*
+(the strategy is missing). An agent instructions interview asks you to *reconcile*
+(instructions vs. reality) and surface *tribal knowledge*.
+
+**Every ADR ships with enforcement.** A PDR without a falsifier is a wish; an ADR without
+a lint is a suggestion. If the enforcement is genuinely expensive to build now, the ADR
+stays Proposed with a tracking issue, and the audit holds the gap.
+
+**Keep each layer to five or fewer records at onboarding.** Cover what a contractor (human
+or AI) could violate silently. Everything else can emerge from audit findings later, which
+is the normal path — each audit P1 that could be a lint becomes an ADR waiting to be
+written.
+
+---
+
+### Step 3 — Capture why the software exists (PDRs)
 
 <!-- Skip this step if you're not adopting docs/pdr/ -->
 
-Before you record how the code is shaped, record what it's for. Every project runs on a handful of product bets — who it serves, what it deliberately won't do, what has to become true for it to matter. Those bets authorize every architectural decision underneath them, and they are almost never written down.
+Before you record how the code is shaped, record what it's for. Every project runs on a
+handful of product bets — who it serves, what it deliberately won't do, what has to
+become true for it to matter. Those bets authorize every architectural decision underneath
+them, and they are almost never written down.
 
-**This step is unlike the next one, and the difference is the point.** In Step 4 you can interview the codebase — consistent patterns that would be expensive to break are decisions, whether or not anyone wrote them down. **You cannot interview a codebase for purpose.** It isn't in there. It exists only in the head of whoever is making the call, so the only way to get it is to ask them.
+**You cannot interview a codebase for purpose.** It isn't in there. It exists only in the
+head of whoever is making the call, so the only way to get it is to ask them.
 
-1. **Get the actual decision-maker in the room.** Not their proxy. A PDR corpus reconstructed by an engineer guessing at the founder's intent is fiction with line numbers.
-2. **Write 3–5 records** in `docs/pdr/`, following `templates/pdr/_template.md`. Include at least one **non-goal** — the thing you've already decided not to build. It's the highest-signal record and the least likely to exist anywhere else.
-3. **Every record ships with a falsifier** — the observable condition that would retire it. A date, a named event, a threshold. This is the whole gate: **a decision without a falsifier is a wish.** A record that can't be settled can't go stale loudly, and a bet that can't go stale loudly is one you'll keep building against long after it stopped being true.
-4. **Register each record in `docs/pdr/README.md`** — `check-adr-readme-sync.mjs` fails the build otherwise.
+1. **Get the actual decision-maker in the room.** Not their proxy. A PDR corpus
+   reconstructed by an engineer guessing at the founder's intent is fiction with line
+   numbers.
+2. **Write 3–5 records** in `docs/pdr/`, following `templates/pdr/_template.md`. Include
+   at least one **non-goal** — the thing you've already decided not to build.
+3. **Every record ships with a falsifier** — the observable condition that would retire
+   it. **A decision without a falsifier is a wish.**
+4. **Register each record in `docs/pdr/README.md`** — `check-adr-readme-sync.mjs` fails
+   the build otherwise.
 
-**Claude Code users:** the `pdr-interview` skill does this properly — it probes the repo first, drafts candidates from real evidence, surfaces the places the repo contradicts itself about its own purpose, and only then asks. Blank-slate interviews produce mission statements; evidence-led interviews produce decisions.
-
-Expect resistance to the falsifiers. That's the artifact working — a falsifier is a commitment to being checkable, and people resist those for good reasons. Sit in it.
-
-Keep it to five or fewer.
-
----
-
-## Step 4 — Capture the implicit decisions (ADRs with enforcement)
-
-Every codebase already runs on a handful of load-bearing architectural decisions that exist only in someone's head — "all DB access goes through the repository layer," "secrets never touch env vars," "migrations are append-only." Don't wait for the audit to trip over violations one at a time. Capture them now:
-
-1. **Identify 3–5 decisions** the build actually depends on. Interview whoever holds them; where nobody does, interview the codebase — consistent patterns that would be expensive to break are decisions, whether or not anyone wrote them down.
-2. **Write each as an ADR** (`docs/adr/`) — what is decided, why, and what the consequences are.
-3. **Ship each ADR with its enforcement** — a lint in the same PR, per the DoD's core rule. If the lint is genuinely expensive to build now, the ADR stays **Proposed** with a tracking issue, and the audit holds the gap.
-
-Keep it to five or fewer. An ADR corpus seeded at onboarding should cover the decisions a new contractor (human or AI) could violate *silently* — everything else can emerge from audit findings later, which is the normal path.
-
-This step is what makes the practice survive personnel changes: the rules stop living with the people who happen to know them.
+**Claude Code users:** the `pdr-interview` skill does this properly — it probes the repo
+first, drafts candidates from real evidence, surfaces the places the repo contradicts
+itself about its own purpose, and only then asks. Blank-slate interviews produce mission
+statements; evidence-led interviews produce decisions.
 
 ---
 
-## Step 5 — Add to CLAUDE.md (or your session instructions)
+### Step 4 — Capture the implicit decisions (ADRs with enforcement)
 
-Add these two things to whatever file describes your repo to Claude:
+<!-- Skip this step if you're not adopting docs/adr/ -->
 
-```markdown
-## Before Declaring Any Work Done
+Every codebase already runs on a handful of load-bearing architectural decisions that
+exist only in someone's head — "all DB access goes through the repository layer,"
+"secrets never touch env vars," "migrations are append-only." Don't wait for the audit to
+trip over violations one at a time. Capture them now.
 
-Check `docs/definition-of-done.md` — find the row for your work type and satisfy every item.
-CI passing is necessary, not sufficient.
-```
+**Architecture IS in the codebase.** Consistent patterns that would be expensive to break
+are decisions, whether or not anyone wrote them down. The evidence agent does the heavy
+lifting; the human confirms, corrects, and fills in the "why."
 
-And in your "Key Files" or "Read Before You Work" table:
+1. **Identify 3–5 decisions** the build actually depends on. Each one must be specific
+   enough to be violated — "we follow good practices" is not a decision.
+2. **Write each as an ADR** (`docs/adr/`) following `templates/adr/_template.md` — what
+   is decided, why, what the consequences are, and what enforces it.
+3. **Ship each ADR with its enforcement** — a lint, check, or CI gate in the same PR. An
+   ADR without enforcement is a suggestion.
+4. **Register each record in `docs/adr/README.md`** — `check-adr-readme-sync.mjs` fails
+   the build otherwise.
 
-```markdown
-| `docs/definition-of-done.md` | Per-work-type done checklist — check before every merge |
-```
-
-If you don't have a `CLAUDE.md`, see `docs/claude-md-additions.md` for the full minimal snippet.
+**Claude Code users:** the `adr-interview` skill probes the codebase for consistent
+patterns, existing lints without ADRs, and contradictions between modules. It then
+interviews you to confirm which patterns are intentional, which are accidental, and which
+need enforcement.
 
 ---
 
-## Step 6 — Configure the audit workflow
+### Step 5 — Capture code quality conventions (clean code)
+
+How should code be written in this repo? Naming, file organization, error handling
+patterns, import conventions, dead code policy. Some of these are load-bearing (violation
+causes bugs) and deserve ADRs with lints. Some are intentional but cosmetic (we prefer
+it, but a violation isn't dangerous) and belong in a convention note. Some are accidental
+— just how the first engineer happened to type.
+
+1. **Run `clean-code-interview`** — it probes for naming patterns, file organization,
+   quality invariants, existing lints without documentation, and contradictions between
+   modules.
+2. **Triage each candidate:** enforce (ADR + lint), document (convention note), or drop
+   (accidental, not worth codifying).
+3. **For "enforce" candidates:** write an ADR with the lint wired in the same PR. Many
+   clean code conventions have off-the-shelf enforcement (eslint, ruff, prettier) — the
+   work is configuration, not writing a custom script.
+4. **For "document" candidates:** add to `CLAUDE.md` under `## Code Conventions` or to
+   `CONTRIBUTING.md`. These are preferences, not rules.
+
+**Don't over-promote to ADRs.** A repo with 20 ADRs about code style is a repo where
+nobody reads ADRs. Reserve ADRs for conventions where violation causes bugs or wastes
+work.
+
+---
+
+### Step 6 — Capture the testing strategy (test coverage)
+
+How is code verified in this repo? What gets tested, at what level, and what's
+deliberately untested? The tests exist in the codebase; the *strategy* behind them almost
+never does.
+
+1. **Run `test-coverage-interview`** — it maps coverage by module, identifies false-green
+   tests, checks whether coverage thresholds are enforced, and surfaces contradictions
+   between the DoD's test requirements and what CI actually gates.
+2. **For each gap:** is it a real gap (file a tracking issue), deliberately untested
+   (document why), or hard to test (file a tracking issue with the blocker)?
+3. **Wire coverage enforcement:** if the team agrees on a threshold, configure it in the
+   test framework and wire it as a required CI check. Start with the *current* coverage
+   as the floor — don't set a target the codebase can't meet on day one.
+4. **Remediate false-green tests:** stubs, skipped tests, and no-op assertions are worse
+   than missing tests — they create the illusion of verification.
+
+---
+
+### Step 7 — Audit agent instructions (CLAUDE.md / AGENTS.md)
+
+What does an AI agent need to know to work effectively in this repo? Build commands, test
+commands, lint commands, architecture overview, key files, conventions, and gotchas. If
+the briefing is wrong, every agent that works in the repo makes the same mistakes.
+
+1. **Run `agent-instructions-interview`** — it reads existing instruction files, verifies
+   every command and path against the codebase, checks for missing sections, and
+   surfaces contradictions between instructions and reality.
+2. **The interview surfaces tribal knowledge** — the gotchas that aren't written anywhere
+   but would cause an agent to do the wrong work on day one. This is the highest-value
+   output.
+3. **Verify every command and path.** A wrong command in CLAUDE.md is worse than a missing
+   one — agents follow instructions into walls.
+4. **Consolidate multiple instruction files** (CLAUDE.md + AGENTS.md + .cursorrules) into
+   one primary. Overlapping but slightly different instructions are a drift factory.
+
+If you don't have a `CLAUDE.md`, see `docs/claude-md-additions.md` for the full minimal
+snippet. The `agent-instructions-interview` skill produces a complete, verified file from
+scratch.
+
+---
+
+## Step 8 — Configure the audit workflow
 
 Open `.github/workflows/scheduled-audit.yml` and set the cron schedule to fit your cadence. The default is weekdays at 09:00 ET (14:00 UTC).
 
@@ -163,7 +267,7 @@ The companion `audit-deadman.yml` is the watchdog's watchdog: if no audit artifa
 
 ---
 
-## Step 7 — Run your first audit
+## Step 9 — Run your first audit
 
 Either wait for the scheduled run or trigger it manually:
 
@@ -183,7 +287,7 @@ As you fix findings, note which ones could have been caught by a lint. Each one 
 
 ---
 
-## Step 8 — Add governance health tracking (optional, recommended after 3+ audit cycles)
+## Step 10 — Add governance health tracking (optional, recommended after 3+ audit cycles)
 
 Once you have three audit docs, you have enough data to measure whether the practice is working. The `docs/governance-health-spec.md` in this repo is an implementation brief — read it, then implement it in your repo.
 

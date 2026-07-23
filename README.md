@@ -1,12 +1,12 @@
 # repo-governance
 
-Templates and recipes for sustainable engineering governance: Definition of Done, staleness audits, and lint-enforced architecture decisions.
+Templates and recipes for sustainable engineering governance: Definition of Done, staleness audits, lint-enforced architecture decisions, and a five-layer skill suite that probes an existing codebase and interviews the team to bootstrap governance artifacts.
 
 ---
 
 ## What this is
 
-A small, portable practice built around four observations:
+A small, portable practice built around five observations:
 
 1. **"CI is green" is not the same as "done."** Every codebase drifts — docs go stale, ADRs promise lints that never ship, bugs recur because there was no regression test. A Definition of Done (DoD) is a per-work-type checklist that makes "done" explicit before a PR merges.
 
@@ -16,11 +16,15 @@ A small, portable practice built around four observations:
 
 4. **A build can be perfectly disciplined and still be pointed at the wrong thing.** Every check above compares one repo artifact to another — code to docs, ADRs to lints. None of them can tell you the product drifted from its reason for existing, because purpose isn't in the repo to compare against. That failure is silent: no red CI, no failed test, just velocity in the wrong direction. Product Decision Records give it something to compare against.
 
+5. **Every layer of "why" can be bootstrapped by probing the codebase — except purpose.** Architecture is in the patterns. Code conventions are in the naming and structure. Test strategy is in the coverage map. Agent instructions are in the config files. Each has a skill that probes the repo, drafts candidates from evidence, and interviews the human to confirm. The five-layer sweep turns an existing codebase into a seeded governance corpus in one onboarding session.
+
 ## What you get
 
 | Artifact | Layer | What it does |
 |---|---|---|
 | `templates/definition-of-done.md` | Policy | Per-work-type done checklist |
+| `templates/adr/_template.md` | Policy | Blank ADR form — every ADR ships with its enforcement (lint/check/gate) |
+| `templates/adr/README.md` | Policy | ADR index template — `lint:adr-readme-sync` fails the build on unregistered records |
 | `templates/adr/022-definition-of-done.md` | Policy | ADR giving DoD its authority (optional, for ADR-using repos) |
 | `templates/pdr/` | Policy | Product Decision Records — who this serves, what bet it makes, what it won't do. Every record carries the condition that would retire it |
 | `templates/adr/023-product-decision-records.md` | Policy | ADR giving PDRs their authority (optional, for ADR-using repos) |
@@ -42,6 +46,10 @@ A small, portable practice built around four observations:
 | `templates/scripts/lint-stub-tests.mjs` | Lint (REPORT, npm repos) | A `test`/`test:*` script that exits 0 without running anything — false-green CI |
 | `templates/skills/competitive-analysis/` | Skill | Self-discovering competitive analysis → a watch-item doc + PR |
 | `templates/skills/pdr-interview/` | Skill | Probes the repo, then interviews the person who holds the thesis → a PDR corpus + PR |
+| `templates/skills/adr-interview/` | Skill | Probes the codebase for load-bearing patterns, surfaces enforcement gaps → an ADR corpus with lints + PR |
+| `templates/skills/clean-code-interview/` | Skill | Probes for naming/organization conventions, triages intentional vs accidental → coding standard ADRs + convention notes + PR |
+| `templates/skills/test-coverage-interview/` | Skill | Maps coverage gaps and false-green traps, interviews for testing strategy → testing standard ADRs with coverage gates + PR |
+| `templates/skills/agent-instructions-interview/` | Skill | Reconciles CLAUDE.md/AGENTS.md against reality, surfaces tribal knowledge → verified agent instructions + PR |
 | `templates/governance-sync-claude-section.md` | Integration | CLAUDE.md breadcrumb so downstream agents can self-navigate to governance |
 | `docs/claude-md-additions.md` | Integration | The two lines to add to `CLAUDE.md` or session instructions |
 | `docs/personas.md` | Reference | Named roles (repo owner, reviewer, auditor, remediator) used by templates — most small teams collapse all into the founder |
@@ -63,17 +71,24 @@ Audit catches drift → finding prompts a lint → lint enforces pre-commit
 
 Start with just the audit and DoD. Add lints as ADRs accumulate. Don't wait until the lint exists to apply the ADR — the audit holds the gap. Once you have a few audit cycles, add governance health tracking to measure whether the practice is actually working.
 
-## The three layers of why
+## The five layers of governance
 
-Each layer answers a different question, and each has its own way of going stale:
+Each layer answers a different question, and each has a skill that probes the codebase,
+drafts candidates from evidence, and walks the human through confirming or filling in the
+gaps:
 
-| Layer | Artifact | Answers | Retired by |
-|---|---|---|---|
-| Product | `docs/pdr/` | Why does this software exist at all? | Its falsifier firing |
-| Architecture | `docs/adr/` | Why is the code shaped this way? | Being superseded |
-| Rule | `docs/definition-of-done.md` | Why does this check exist? | The incident stopping |
+| Layer | Artifact | Answers | Skill | Evidence vs. interview |
+|---|---|---|---|---|
+| Product | `docs/pdr/` | Why does this software exist at all? | `pdr-interview` | Interview is origination — purpose is not in the codebase |
+| Architecture | `docs/adr/` | Why is the code shaped this way? | `adr-interview` | Probe is primary — architecture IS in the codebase; interview confirms |
+| Clean code | conventions + ADRs | How should code be written? | `clean-code-interview` | Probe + triage — intentional vs. accidental patterns |
+| Test coverage | testing ADRs + gates | How is code verified? | `test-coverage-interview` | Probe maps what exists; interview fills in the strategy |
+| Agent instructions | `CLAUDE.md` / `AGENTS.md` | How are agents briefed? | `agent-instructions-interview` | Probe reconciles docs with reality; interview surfaces tribal knowledge |
 
-The bottom two are recoverable from the repo — you can interview a codebase for its architecture, since consistent patterns that would be expensive to break are decisions whether or not anyone wrote them down. **The top one isn't.** Purpose exists only in a human's head, which is why the PDR corpus is the one artifact here that can't be bootstrapped by reading code. See `templates/skills/pdr-interview/`.
+The bottom four are recoverable from the repo — you can probe a codebase for its
+architecture, conventions, test coverage, and instruction accuracy. **The top one isn't.**
+Purpose exists only in a human's head, which is why the PDR corpus is the one artifact
+here that can't be bootstrapped by reading code. See `templates/skills/pdr-interview/`.
 
 ## Keeping templates current
 
