@@ -257,7 +257,7 @@ scratch.
 
 Open `.github/workflows/scheduled-audit.yml` and set the cron schedule to fit your cadence. The default is weekdays at 09:00 ET (14:00 UTC).
 
-The workflow prompt already covers six domains (ADR coherence, docs drift, codebase discipline, GitHub backlog, watch-list sweep, PDR coherence). Delete the PDR domain if you're not adopting `docs/pdr/` — a domain that sweeps a directory you don't have reports nothing, which is indistinguishable from a clean result. If your repo has specific patterns you want audited — a particular directory, a specific naming convention, a known recurring drift type — add them to the prompt's "also check" section.
+The workflow prompt already covers seven domains (ADR coherence, docs drift, codebase discipline, GitHub backlog, watch-list sweep, PDR coherence, governance layer staleness). Delete the PDR domain if you're not adopting `docs/pdr/` — a domain that sweeps a directory you don't have reports nothing, which is indistinguishable from a clean result. If your repo has specific patterns you want audited — a particular directory, a specific naming convention, a known recurring drift type — add them to the prompt's "also check" section.
 
 Ensure `ANTHROPIC_API_KEY` is available as a secret.
 
@@ -338,6 +338,85 @@ After setup, your normal workflow looks like this:
 7. Merge the audit PR — audit doc and fixes land together
 
 Over time: each audit P1 that could be a lint becomes a lint. The audit gets quieter. The codebase stays honest.
+
+---
+
+## Ongoing practice — the five-layer refresh cycle
+
+The five-layer sweep (Steps 3–7) is not a one-time onboarding event. Each layer has a
+staleness clock — the codebase changes, and the layer's artifacts drift from reality.
+The refresh cycle keeps them honest.
+
+### How staleness is detected
+
+Two mechanisms detect when a layer needs refreshing:
+
+1. **The audit (automatic):** Domain 7 checks each layer's staleness triggers and
+   reports stale layers as P2 findings with the recommended refresh skill. This runs
+   every audit cycle — you don't have to remember to check.
+
+2. **The governance-sync check (on demand):** When a downstream repo checks for
+   updates from repo-governance, the governance-sync section in CLAUDE.md tells the
+   agent to check each layer's staleness trigger and run the matching refresh skill
+   if stale. If nothing is stale, the agent skips the refresh step entirely.
+
+### The staleness triggers
+
+| Layer | Stale when… | Refresh skill |
+|---|---|---|
+| PDRs | `Last confirmed` > 90 days, or falsifier fired | `pdr-interview refresh` |
+| ADRs | Lints without ADRs, ADRs Proposed 3+ cycles, module contradictions | `adr-interview refresh` |
+| Clean code | Lint/formatter config changed, new modules violate conventions | `clean-code-interview refresh` |
+| Test coverage | Coverage dropped, new untested modules, false-green tests | `test-coverage-interview refresh` |
+| Agent instructions | Commands/paths don't match reality, tooling migrated | `agent-instructions-interview refresh` |
+
+See `docs/definition-of-done.md` → Governance layer refresh for the full checklist.
+
+### Refresh what's stale, not everything
+
+The five layers have independent staleness clocks. A tooling migration makes agent
+instructions stale but doesn't make PDRs stale. A product pivot makes PDRs stale but
+doesn't make clean code conventions stale. Running all five refreshes when one layer
+drifted is wasted effort — and effort that's wasted is effort that won't happen next
+time.
+
+### The closed loop
+
+```
+Five-layer sweep (onboarding) → artifacts seeded
+        ↓
+Audit detects staleness → recommends refresh skill
+        ↓
+Agent runs refresh skill → layer artifacts updated
+        ↓
+DoD + audit domains re-derived from updated artifacts
+        ↓
+Next audit reflects updated layers → quieter if refresh caught the drift
+```
+
+The whole system is a self-correcting loop: the five skills bootstrap the layers, the
+DoD enforces them at PR time, the audit catches drift between them, and the refresh
+skills bring them back into alignment. The audit gets quieter over time because each
+refresh closes the gaps the audit was flagging.
+
+### Dependent layers
+
+When a refresh changes a layer's artifacts, check the dependent layers:
+
+- **PDR superseded** → ADRs that served the old bet may need re-evaluation
+- **ADR changed** → clean code conventions that express the ADR may need updating
+- **ADR with new enforcement** → test coverage strategy may need to check the new invariant
+- **Any layer changed** → agent instructions may need to reference the new artifacts
+
+If a dependent layer is stale as a result, flag it for refresh in the same session or
+file a tracking issue.
+
+### The layer refresh log
+
+Each downstream repo's CLAUDE.md includes a `### Layer refresh log` table (installed by
+the governance-sync section). This tracks when each layer was last refreshed and what
+triggered it. The staleness check compares this against the triggers — if a layer was
+refreshed recently and nothing has changed, it's not stale.
 
 ---
 

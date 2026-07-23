@@ -177,7 +177,44 @@ For each stale issue found: close it with a comment citing the PR and a one-line
 
 ---
 
-## The single underlying rule
+### Governance layer refresh
+
+Each of the five governance layers (PDRs, ADRs, clean code, test coverage, agent
+instructions) has a staleness clock. A layer is stale when the codebase has changed
+enough that the layer's artifacts no longer reflect reality. The refresh skills
+(`pdr-interview`, `adr-interview`, `clean-code-interview`, `test-coverage-interview`,
+`agent-instructions-interview`) re-probe the codebase and re-interview the human to
+catch drift. Run the refresh skill for any layer whose staleness trigger has fired.
+
+**Staleness triggers by layer:**
+
+| Layer | Stale when… | Refresh skill |
+|---|---|---|
+| PDRs | Any `Last confirmed` > 90 days, or a falsifier condition has fired | `pdr-interview refresh` |
+| ADRs | Lints exist without ADRs, or ADRs are Proposed for 3+ audit cycles, or audit finds module contradictions | `adr-interview refresh` |
+| Clean code | Lint/formatter config changed since last refresh, or new modules violate existing conventions, or audit finds convention drift | `clean-code-interview refresh` |
+| Test coverage | Coverage dropped below threshold, or new modules have no tests, or false-green tests detected | `test-coverage-interview refresh` |
+| Agent instructions | Commands or paths in CLAUDE.md/AGENTS.md don't match repo reality, or tooling migrated, or directory structure changed | `agent-instructions-interview refresh` |
+
+**Checklist for a layer refresh:**
+
+- [ ] Staleness trigger identified (which trigger fired? cite the audit finding or the change)
+- [ ] Refresh skill run for the stale layer only (not all five — refresh what's stale, skip what's not)
+- [ ] Evidence agent probed the current codebase state, not the state at last bootstrap
+- [ ] Interview confirmed, corrected, or rejected candidates (evidence-led, one question at a time)
+- [ ] New/updated records registered in their index (`docs/adr/README.md`, `docs/pdr/README.md`)
+- [ ] `lint:adr-readme-sync` passes
+- [ ] DoD and audit domains updated if the refresh changed what's enforced (new ADR → new DoD checklist item → new audit domain if applicable)
+- [ ] Layer refresh log updated in CLAUDE.md `### Layer refresh log`
+- [ ] If the refresh invalidated dependent layers: those layers flagged for refresh in the same session or filed as tracking issues
+
+> **Why this rule exists:** [Fill in with your own incident. Example: "A tooling migration from jest to vitest changed every test command in the repo. CLAUDE.md still said `npm test` (jest). Every agent that worked in the repo for the next three weeks ran the wrong test command, assumed the tests were broken, and either skipped testing or spent a turn debugging a non-existent failure. The agent-instructions layer was stale for three weeks because nobody owned the refresh."]
+
+**Refresh what's stale, not everything.** The five layers have independent staleness clocks. A tooling migration makes agent instructions stale but doesn't make PDRs stale. A new product pivot makes PDRs stale but doesn't make clean code conventions stale. Running all five refreshes when one layer drifted is wasted effort — and effort that's wasted is effort that won't happen next time.
+
+**Dependent layers.** A PDR supersession may invalidate ADRs that served the old bet. An ADR change may change what clean code conventions are load-bearing. An ADR with new enforcement may change what the test coverage strategy should check. When a refresh changes a layer's artifacts, check the dependent layers (see the authorization graph in GETTING_STARTED) and flag them for refresh if the change propagates.
+
+---
 
 **Enforcement ships with the promise, not after it.**
 

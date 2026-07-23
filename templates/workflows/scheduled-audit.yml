@@ -42,7 +42,7 @@ jobs:
         with:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
           prompt: |
-            Run a staleness audit on this repository. Check six domains in parallel:
+            Run a staleness audit on this repository. Check seven domains in parallel:
 
             1. **ADR coherence** — if ADRs exist in docs/adr/, are they internally consistent,
                reflected in the code, and do they have the enforcement they promised?
@@ -111,6 +111,37 @@ jobs:
                  lint:adr-readme-sync should have caught it (the lint is missing or not
                  wired into CI).
 
+            7. **Governance layer staleness** — check whether any of the five governance
+               layers (PDRs, ADRs, clean code, test coverage, agent instructions) have
+               drifted from the codebase and need a refresh. Read the `### Layer refresh
+               log` in CLAUDE.md (or AGENTS.md) for the last-refreshed date of each layer.
+               For each layer, check its staleness trigger (see `docs/definition-of-done.md`
+               → Governance layer refresh for the trigger table):
+
+               - **PDRs:** any `Last confirmed` > 90 days? any falsifier fired since last
+                 audit? → recommend `pdr-interview refresh`
+               - **ADRs:** any lints in CI or scripts/ without a corresponding ADR? any
+                 ADRs stuck in Proposed for 3+ audit cycles? any module contradictions
+                 found in this audit's codebase discipline domain? → recommend
+                 `adr-interview refresh`
+               - **Clean code:** has lint/formatter config changed since the last refresh
+                 (check git log for .eslintrc, .prettierrc, pyproject.toml [tool.ruff],
+                 .editorconfig)? do new modules follow existing conventions? → recommend
+                 `clean-code-interview refresh`
+               - **Test coverage:** has coverage dropped since last audit? are there new
+                 source directories with no test files? any false-green tests found in
+                 this audit? → recommend `test-coverage-interview refresh`
+               - **Agent instructions:** do the commands in CLAUDE.md/AGENTS.md actually
+                 exist in package.json/Makefile? do referenced paths exist? has tooling
+                 changed (check git log for package.json dependency changes, config file
+                 renames)? → recommend `agent-instructions-interview refresh`
+
+               Report each stale layer as a P2 finding with the trigger that fired and the
+               recommended refresh skill. Layers that are not stale are not reported — this
+               domain is informational, not a gate. A layer that has never been refreshed
+               (log shows `—`) is not stale; it was bootstrapped at onboarding and the
+               staleness clock starts from that date.
+
             Prior audit: ${{ steps.prior.outputs.path }}
             ${{ github.event.inputs.notes && format('Context note: {0}', github.event.inputs.notes) || '' }}
 
@@ -123,7 +154,7 @@ jobs:
             - Headline counts table (Resolved / Superseded / Carried / New / Total open per severity)
             - Resolved section (findings from prior audit now fixed, with evidence)
             - P0 / P1 / P2 sections (full body per finding with Recommended action)
-            - Each finding ID: AUDIT-YYYY-MM-DD-DOMAIN-NN (DOMAIN = ADR/DOCS/CODE/BACKLOG/PDR)
+            - Each finding ID: AUDIT-YYYY-MM-DD-DOMAIN-NN (DOMAIN = ADR/DOCS/CODE/BACKLOG/PDR/STALE)
             - Carry findings forward from the prior audit if still open
             - A "Future items" section (from the watch-list sweep): watch items and PDR falsifiers with their source, date, and revisit condition — informational until the condition arrives
             - A "Close-out checklist" section: the ordered list of actions needed before this audit counts as closed

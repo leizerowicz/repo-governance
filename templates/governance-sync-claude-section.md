@@ -27,9 +27,33 @@ To check for and apply pending governance updates:
    ```
    (repo-governance's `_client.md` is the source of truth, NOT this repo — do not modify files in repo-governance)
 
+To check for stale governance layers (run during governance sync, skip if nothing is stale):
+
+1. Read the staleness triggers table in `docs/definition-of-done.md` → Governance layer refresh
+2. For each of the five layers, check whether its staleness trigger has fired:
+   - **PDRs:** any `Last confirmed` > 90 days? any falsifier condition fired?
+   - **ADRs:** lints in CI without corresponding ADRs? ADRs Proposed for 3+ audit cycles? module contradictions in last audit?
+   - **Clean code:** lint/formatter config changed since last refresh? new modules violating conventions?
+   - **Test coverage:** coverage dropped? new modules with no tests? false-green tests in last audit?
+   - **Agent instructions:** do the commands in this CLAUDE.md actually work? do the referenced paths exist? did tooling change?
+3. For each stale layer, run the matching refresh skill from `~/repos/greg/repo-governance/templates/skills/`:
+   - `pdr-interview refresh` / `adr-interview refresh` / `clean-code-interview refresh` / `test-coverage-interview refresh` / `agent-instructions-interview refresh`
+4. Skip layers that are not stale — refresh what's stale, not everything
+5. Update the `### Layer refresh log` table below with today's date for each refreshed layer
+
 ### Applied governance updates
 
 <!-- append new entries below when you apply a downstream prompt -->
+
+### Layer refresh log
+
+| Layer | Last refreshed | Trigger |
+|-------|---------------|---------|
+| PDRs | — | — |
+| ADRs | — | — |
+| Clean code | — | — |
+| Test coverage | — | — |
+| Agent instructions | — | — |
 
 Governance templates live in `~/repos/greg/repo-governance/templates/` and are
 the source of truth for ADR format, DoD, issue authoring, audit structure, PR
@@ -43,8 +67,15 @@ templates, and watch-list conventions. When in doubt, check the template first.
 - The `Applied governance updates` subsection is where the downstream repo records what
   it has applied. repo-governance reads this during `/review-sync` to reconcile `_client.md`.
   The downstream repo never writes to repo-governance — that's a trust boundary.
+- The `Layer refresh log` table tracks when each of the five governance layers was last
+  refreshed. The staleness check compares this against the triggers in the DoD. If nothing
+  is stale, the agent skips the refresh step entirely — no wasted effort.
 - The template path is included so the agent can self-serve on conventions without
   needing a prompt for every question.
 - This replaces the pattern of generating detailed per-repo downstream prompts with
   repo-governance knowing every ADR filename. The agent reads the prompt, the prompt
   tells it what to do, and the agent discovers the repo's specifics at runtime.
+- **The five layers have independent staleness clocks.** A tooling migration makes agent
+  instructions stale but doesn't make PDRs stale. A product pivot makes PDRs stale but
+  doesn't make clean code conventions stale. The refresh check tests each layer
+  independently and refreshes only what's drifted.

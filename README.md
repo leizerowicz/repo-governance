@@ -57,19 +57,28 @@ A small, portable practice built around five observations:
 
 ## How to apply it
 
-See [GETTING_STARTED.md](./GETTING_STARTED.md) — roughly 20 minutes for a new repo, 40 minutes if you have existing ADRs to reconcile.
+See [GETTING_STARTED.md](./GETTING_STARTED.md) — roughly 20 minutes for a new repo, 40 minutes if you have existing ADRs to reconcile. The five-layer sweep (Steps 3–7) adds 30–60 minutes if run interactively, or can be spread across sessions.
 
 ## The compounding dynamic
 
 ```
-Audit catches drift → finding prompts a lint → lint enforces pre-commit
-     ↑                                                    ↓
-     └──────────── audit has less noise next time ────────┘
-          ↕
-  governance-health.md tracks failure rate + MTTR over time
+Five-layer sweep bootstraps artifacts (PDRs, ADRs, conventions, tests, agent instructions)
+        ↓                                              ↑
+Audit catches drift → recommends refresh skill → layer artifacts updated
+        ↓                                              ↑
+Finding prompts a lint → lint enforces pre-commit → next audit is quieter
+        ↓
+governance-health.md tracks failure rate + MTTR over time
 ```
 
-Start with just the audit and DoD. Add lints as ADRs accumulate. Don't wait until the lint exists to apply the ADR — the audit holds the gap. Once you have a few audit cycles, add governance health tracking to measure whether the practice is actually working.
+The system is a self-correcting loop: the five skills bootstrap the layers, the DoD
+enforces them at PR time, the audit catches drift and recommends refreshes, and the
+refresh skills bring the layers back into alignment. The audit gets quieter over time
+because each refresh closes the gaps the audit was flagging.
+
+Start with just the audit and DoD. Add the five-layer sweep when you're ready to seed
+the governance artifacts. Run refresh skills when the audit says a layer is stale —
+not on a fixed schedule, not all at once, only what's drifted.
 
 ## The five layers of governance
 
