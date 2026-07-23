@@ -157,7 +157,7 @@ The workflow prompt already covers six domains (ADR coherence, docs drift, codeb
 
 Ensure `ANTHROPIC_API_KEY` is available as a secret.
 
-The workflow opens a PR each run with the audit doc. Review P0/P1 findings first; P2 are tracked and reviewed at the next audit.
+The workflow opens a PR each run with the audit doc (Phase 1). Review the findings, then run the remediation session on the same branch to apply dispositions and fixes (Phase 2). See `docs/definition-of-done.md` → Audit remediation for the checklist.
 
 The companion `audit-deadman.yml` is the watchdog's watchdog: if no audit artifact appears for 4 days, it goes red and files a P1 issue. This matters more than it sounds — GitHub disables scheduled workflows after 60 days of repo inactivity, and an audit that dies produces *nothing*, so nothing turns red on its own. Set its cron to fire after your audit's window.
 
@@ -171,11 +171,13 @@ Either wait for the scheduled run or trigger it manually:
 gh workflow run scheduled-audit.yml
 ```
 
-Your first audit will be noisy. That's expected and useful — it's an inventory of existing drift, not a grade. Work through it:
+Your first audit will be noisy. That's expected and useful — it's an inventory of existing drift, not a grade. The audit PR has a two-phase lifecycle:
 
-- **P0s** fix this week (actively misleading or a live regression risk)
-- **P1s** next sprint (costs hours when discovered next sprint)
-- **P2s** track and review at next audit
+**Phase 1 (audit session):** The audit runs, writes the doc, opens a PR, and stops. Review the findings.
+
+**Phase 2 (remediation session):** Check out the audit branch, apply dispositions to each finding — fix P0s in the PR, file issues for P1s (cite them inline), WONT-FIX P2s with rationale — update the audit doc with dispositions, and push to the same PR. See `docs/definition-of-done.md` → Audit remediation for the checklist.
+
+Merge the PR once CI is green and every finding has a disposition. The merged PR contains both the audit doc and the fixes.
 
 As you fix findings, note which ones could have been caught by a lint. Each one of those is an ADR waiting to be written.
 
@@ -227,8 +229,9 @@ After setup, your normal workflow looks like this:
 2. Open a PR — the template prompts you for `Fixes #N` and the type-specific checklist
 3. Satisfy the checklist before requesting review
 4. Merge — GitHub closes the linked issue automatically
-5. Each weekday morning, the audit runs and opens a PR if it finds drift
-6. Review the audit PR; assign P0s immediately, schedule P1s
+5. Each weekday morning, the audit runs and opens a PR with the audit doc (Phase 1)
+6. Review the audit findings, then run the remediation session on the same branch — fix P0s, file issues for P1s, WONT-FIX P2s, update the doc with dispositions, push (Phase 2)
+7. Merge the audit PR — audit doc and fixes land together
 
 Over time: each audit P1 that could be a lint becomes a lint. The audit gets quieter. The codebase stays honest.
 

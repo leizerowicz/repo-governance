@@ -34,7 +34,7 @@ MetaHarness is a factory that turns any GitHub repo into a branded AI agent harn
 **1. Automated repo analysis and config generation**
 > Their approach: `harness analyze-repo <path>` runs deterministic static analysis (lockfile/manifest probing + lexical scoring + optional embeddings) and produces `repo-profile.json` + `harness-plan.json` in seconds, no code execution.
 > Our current state: `downstream/_kickoff-prompt.md` is a paste-and-run Claude Code prompt. Fully manual bootstrap. Each new repo takes a human session.
-> Relevance: HIGH — directly addresses our bootstrap bottleneck. Every new governed repo currently requires Greg or Claude to manually discover the architecture and apply templates.
+> Relevance: HIGH — directly addresses our bootstrap bottleneck. Every new governed repo currently requires the repo owner or Claude to manually discover the architecture and apply templates.
 > Existing issue: no existing issue
 > Candidate action: Steal the idea — a `governance analyze-repo <path>` slash command that statically probes the target, outputs a scored reposcape, and recommends which templates to apply.
 

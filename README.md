@@ -44,6 +44,7 @@ A small, portable practice built around four observations:
 | `templates/skills/pdr-interview/` | Skill | Probes the repo, then interviews the person who holds the thesis → a PDR corpus + PR |
 | `templates/governance-sync-claude-section.md` | Integration | CLAUDE.md breadcrumb so downstream agents can self-navigate to governance |
 | `docs/claude-md-additions.md` | Integration | The two lines to add to `CLAUDE.md` or session instructions |
+| `docs/personas.md` | Reference | Named roles (repo owner, reviewer, auditor, remediator) used by templates — most small teams collapse all into the founder |
 | `docs/governance-health-spec.md` | Measurement | Implementation spec for DORA-proxy metrics derived from audit docs |
 
 ## How to apply it

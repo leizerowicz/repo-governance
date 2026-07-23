@@ -24,6 +24,7 @@
 - [ ] Migration
 - [ ] Scheduled automation / job definition change
 - [ ] Documentation
+- [ ] Audit remediation
 - [ ] Chore / housekeeping
 
 ---
@@ -82,6 +83,15 @@
 - [ ] No contradictions with other sections in the same doc or linked docs
 - [ ] Planned features marked `(planned)`, not present-tense
 - [ ] If adding a watch-item doc (`docs/watch-items/`): every **Watch list** line includes a specific revisit condition or date, not just "revisit later"
+
+### Audit remediation
+- [ ] Checked out the audit branch (`audit/YYYY-MM-DD`), not master/main
+- [ ] Every P0 finding from the audit doc is fixed in this PR
+- [ ] Every P1 finding has a filed tracking issue cited inline in the audit doc, or is fixed in this PR
+- [ ] Every P2 finding has a WONT-FIX rationale inline in the audit doc, or is fixed
+- [ ] Audit doc updated — each finding has a `**Disposition:**` line (RESOLVED / FILED #N / WONT-FIX)
+- [ ] Stale issue sweep run — open issues fixed by merged PRs are closed
+- [ ] All changes are on the same branch as the audit doc (single PR)
 
 ### Issue close (if this PR closes one)
 - [ ] `Fixes #N` or `Closes #N` is in the **Closes** section above — GitHub closes the issue automatically on merge

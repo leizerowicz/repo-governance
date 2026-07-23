@@ -162,8 +162,12 @@ jobs:
           git push -u origin "$BRANCH"
           gh pr create \
             --title "docs: staleness audit ${DATE}" \
-            --body "Scheduled staleness audit. Review P0/P1 findings first — P0s fixed this week, P1s next sprint. See \`docs/definition-of-done.md\` for the DoD reference." \
+            --body "Scheduled staleness audit — Phase 1 (read-only scan).
+
+Review the findings below. To remediate: check out this branch, apply dispositions (fix P0s, file issues for P1s, WONT-FIX P2s), update the audit doc inline with dispositions, and push to this same PR. See \`docs/definition-of-done.md\` → Audit remediation for the checklist." \
             --label "audit,documentation" || \
           gh pr create \
             --title "docs: staleness audit ${DATE}" \
-            --body "Scheduled staleness audit. Review P0/P1 findings first — P0s fixed this week, P1s next sprint. See \`docs/definition-of-done.md\` for the DoD reference."
+            --body "Scheduled staleness audit — Phase 1 (read-only scan).
+
+Review the findings below. To remediate: check out this branch, apply dispositions (fix P0s, file issues for P1s, WONT-FIX P2s), update the audit doc inline with dispositions, and push to this same PR. See \`docs/definition-of-done.md\` → Audit remediation for the checklist."
